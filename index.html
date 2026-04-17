@@ -1,27 +1,647 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>我的第一个GitHub网站</title>
-    <style>
-        body {
-            font-family: "微软雅黑", sans-serif;
-            background-color: #f0f8ff;
-            text-align: center;
-            padding-top: 100px;
-        }
-        h1 {
-            color: #2c3e50;
-        }
-        p {
-            color: #34495e;
-            font-size: 18px;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>🐉 欢迎来到 Wyc 的网站</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      min-height: 100vh;
+      background: linear-gradient(145deg, #0b0f1c 0%, #1a1f33 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Segoe UI', 'Poppins', 'Microsoft YaHei', sans-serif;
+      padding: 16px;
+    }
+
+    .card {
+      max-width: 1000px;
+      width: 100%;
+      background: rgba(10, 15, 27, 0.65);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(120, 180, 255, 0.25);
+      border-radius: 48px;
+      padding: 28px 24px 32px;
+      box-shadow: 0 25px 40px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(70, 130, 255, 0.1) inset;
+      transition: box-shadow 0.3s;
+    }
+
+    .card:hover {
+      box-shadow: 0 30px 50px rgba(0, 20, 60, 0.8), 0 0 0 1px rgba(100, 180, 255, 0.3) inset;
+    }
+
+    h1 {
+      text-align: center;
+      font-size: clamp(2.2rem, 12vw, 4.2rem);
+      font-weight: 800;
+      letter-spacing: 4px;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      background: linear-gradient(135deg, #ffe99c 0%, #ffd966 25%, #ffb347 50%, #ff8c5a 75%, #ff6e7f 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      text-shadow: 0 0 20px #ffaa33aa, 0 0 40px #ff5500aa;
+      filter: drop-shadow(0 4px 6px #00000040);
+      animation: titleGlow 3s infinite alternate;
+    }
+
+    @keyframes titleGlow {
+      0% { text-shadow: 0 0 15px #ffbb33, 0 0 30px #ff7733, 0 0 45px #aa3300; }
+      100% { text-shadow: 0 0 25px #ffe066, 0 0 50px #ffaa00, 0 0 70px #ff4400; }
+    }
+
+    .sub {
+      text-align: center;
+      margin-bottom: 12px;
+      color: #b8cdff;
+      font-weight: 400;
+      letter-spacing: 6px;
+      font-size: 1rem;
+      text-transform: uppercase;
+      opacity: 0.9;
+      word-spacing: 8px;
+    }
+
+    .canvas-wrapper {
+      position: relative;
+      margin: 10px 0 5px;
+      display: flex;
+      justify-content: center;
+      border-radius: 36px;
+      background: #0e1422c0;
+      box-shadow: 0 0 0 1px #2e4b7c, 0 20px 30px -8px black;
+      overflow: hidden;
+      backdrop-filter: blur(4px);
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: auto;
+      max-width: 900px;
+      border-radius: 32px;
+      cursor: default;
+      transition: filter 0.2s;
+    }
+
+    .dragon-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 18px;
+      padding: 0 12px;
+      color: #9bbaff;
+    }
+
+    .badge {
+      display: flex;
+      gap: 12px;
+    }
+
+    .badge span {
+      background: #1e2b4b;
+      padding: 6px 16px;
+      border-radius: 60px;
+      font-size: 0.9rem;
+      font-weight: 500;
+      border: 1px solid #4f7eb0;
+      color: #d3e2ff;
+      box-shadow: 0 2px 6px #00000030;
+      backdrop-filter: blur(5px);
+    }
+
+    .signature {
+      font-size: 1.2rem;
+      font-weight: 600;
+      background: linear-gradient(to right, #c5d9ff, #aac8ff);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+
+    .signature i {
+      font-style: normal;
+      font-size: 1.5rem;
+      margin-right: 6px;
+    }
+
+    /* 简单响应式调整 */
+    @media (max-width: 560px) {
+      .card {
+        padding: 20px 12px 24px;
+        border-radius: 32px;
+      }
+      h1 {
+        letter-spacing: 2px;
+      }
+      .badge span {
+        padding: 4px 10px;
+        font-size: 0.75rem;
+      }
+    }
+  </style>
 </head>
 <body>
-    <h1>🎉 恭喜！网站上线成功！</h1>
-    <p>这是我用 GitHub Pages 搭建的第一个免费网站~</p >
+<div class="card">
+  <h1>🐲 欢迎来到 wyc 的网站</h1>
+  <div class="sub">✦ 烈焰与星辰 · 龙之领域 ✦</div>
+
+  <div class="canvas-wrapper">
+    <canvas id="dragonCanvas" width="900" height="500"></canvas>
+  </div>
+
+  <div class="dragon-footer">
+    <div class="badge">
+      <span>✨ 动态飞龙</span>
+      <span>🔥 永生之火</span>
+    </div>
+    <div class="signature">
+      <i>🐉</i> Wyc · 秘境
+    </div>
+  </div>
+</div>
+
+<script>
+  (function(){
+    "use strict";
+
+    // 获取 canvas 元素与上下文
+    const canvas = document.getElementById('dragonCanvas');
+    const ctx = canvas.getContext('2d');
+    
+    // 固定尺寸 (已经通过 width/height 属性设置，保持比例)
+    const W = 900;
+    const H = 500;
+    canvas.width = W;
+    canvas.height = H;
+
+    // 动画变量
+    let animationFrame = null;
+    let timeOffset = 0;
+    const startTime = performance.now();
+
+    // ----- 动画循环 -----
+    function animate(now) {
+      // 计算时间增量 (用于翅膀扇动、眨眼等)
+      const elapsed = (now - startTime) + timeOffset; 
+      // 使用正弦生成周期运动
+      const wingPhase = elapsed * 0.008;  // 翅膀频率
+      const blinkPhase = elapsed * 0.003; // 眨眼较慢
+      
+      // 绘制整个场景
+      drawScene(wingPhase, blinkPhase, elapsed);
+      
+      // 继续下一帧
+      animationFrame = requestAnimationFrame(animate);
+    }
+
+    // ----- 绘制背景 (星空 & 神秘光晕) -----
+    function drawBackground() {
+      // 深色基底渐变
+      const grad = ctx.createRadialGradient(400, 200, 50, 450, 250, 600);
+      grad.addColorStop(0, '#0c1126');
+      grad.addColorStop(0.5, '#111a2f');
+      grad.addColorStop(1, '#050a14');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, W, H);
+
+      // 星星 (闪烁效果通过透明度微调)
+      ctx.shadowColor = '#b0d0ff';
+      ctx.shadowBlur = 6;
+      for (let i = 0; i < 120; i++) {
+        const starX = (i * 131) % W, starY = (i * 279) % H;
+        const brightness = 0.5 + 0.5 * Math.sin(i * 0.5 + performance.now() * 0.001);
+        ctx.fillStyle = `rgba(255, 245, 200, ${brightness * 0.7})`;
+        ctx.beginPath();
+        ctx.arc(starX, starY, (i % 3 + 1) * 0.8, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      
+      // 大一些的闪烁星
+      ctx.shadowBlur = 12;
+      ctx.fillStyle = '#fff9e6';
+      ctx.beginPath();
+      ctx.arc(120, 70, 2.2, 0, Math.PI*2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(780, 120, 2.8, 0, Math.PI*2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(200, 420, 2, 0, Math.PI*2);
+      ctx.fill();
+      ctx.shadowBlur = 0;
+      ctx.shadowColor = 'transparent';
+
+      // 地面/云气效果
+      const groundGrad = ctx.createLinearGradient(0, H-60, 0, H);
+      groundGrad.addColorStop(0, '#13223300');
+      groundGrad.addColorStop(0.9, '#0e1b2bbb');
+      ctx.fillStyle = groundGrad;
+      ctx.fillRect(0, H-80, W, 80);
+      
+      // 淡淡的光柱
+      ctx.fillStyle = '#3d5f9f20';
+      ctx.filter = 'blur(25px)';
+      ctx.beginPath();
+      ctx.ellipse(450, 280, 300, 180, 0, 0, Math.PI*2);
+      ctx.fill();
+      ctx.filter = 'none';
+    }
+
+    // ----- 绘制龙 (核心) -----
+    function drawDragon(wingAngle, blink, time) {
+      // wingAngle: 翅膀旋转角度 (弧度) , blink: 控制眼睛缩放, time: 用于微动
+      
+      // 整体身体轻微上下浮动 (呼吸感)
+      const floatY = Math.sin(time * 0.003) * 4;
+      const bodyBaseY = 290 + floatY;
+      
+      // 保存状态，便于局部变换
+      ctx.save();
+      
+      // ---------- 尾巴 (动态摆动) ----------
+      const tailSway = Math.sin(time * 0.01) * 0.15; // 轻微摆动
+      ctx.save();
+      ctx.shadowColor = '#ffaa3380';
+      ctx.shadowBlur = 18;
+      
+      // 尾巴曲线 (从身体右侧延伸)
+      ctx.beginPath();
+      ctx.moveTo(520, bodyBaseY - 10);
+      ctx.quadraticCurveTo(620, bodyBaseY - 40 + tailSway * 15, 700, bodyBaseY - 60 + tailSway * 20);
+      ctx.lineWidth = 22;
+      ctx.strokeStyle = '#c9672e';
+      ctx.shadowBlur = 20;
+      ctx.stroke();
+      
+      // 尾巴尖 (箭头/火焰)
+      ctx.beginPath();
+      const tipX = 700 + tailSway * 10;
+      const tipY = bodyBaseY - 60 + tailSway * 18;
+      ctx.moveTo(tipX - 10, tipY - 6);
+      ctx.lineTo(tipX + 16, tipY - 2);
+      ctx.lineTo(tipX + 8, tipY + 12);
+      ctx.closePath();
+      ctx.fillStyle = '#e05a2c';
+      ctx.shadowColor = '#ff7700';
+      ctx.shadowBlur = 28;
+      ctx.fill();
+      
+      // 尾巴上的棘
+      ctx.beginPath();
+      ctx.moveTo(600, bodyBaseY - 48);
+      ctx.lineTo(610, bodyBaseY - 70);
+      ctx.lineTo(625, bodyBaseY - 52);
+      ctx.fillStyle = '#c04f1e';
+      ctx.fill();
+      ctx.restore();
+
+      // ---------- 后腿 (右) ----------
+      ctx.save();
+      ctx.shadowBlur = 12;
+      ctx.shadowColor = '#b0551e80';
+      ctx.fillStyle = '#b04e1e';
+      ctx.strokeStyle = '#8a3512';
+      ctx.lineWidth = 5;
+      // 大腿
+      ctx.beginPath();
+      ctx.ellipse(480, bodyBaseY + 25, 22, 16, -0.1, 0, Math.PI*2);
+      ctx.fill();
+      ctx.stroke();
+      // 小腿/爪
+      ctx.beginPath();
+      ctx.ellipse(505, bodyBaseY + 42, 14, 10, 0.2, 0, Math.PI*2);
+      ctx.fillStyle = '#9f4018';
+      ctx.fill();
+      ctx.strokeStyle = '#6e2c0e';
+      ctx.stroke();
+      // 爪子
+      ctx.fillStyle = '#d67a3e';
+      ctx.shadowBlur = 10;
+      for (let i=0; i<3; i++) {
+        ctx.beginPath();
+        ctx.arc(515 + i*8, bodyBaseY + 50, 4, 0, Math.PI*2);
+        ctx.fill();
+      }
+      ctx.restore();
+
+      // ---------- 前腿 (左) ----------
+      ctx.save();
+      ctx.shadowBlur = 12;
+      ctx.fillStyle = '#b5521e';
+      ctx.strokeStyle = '#7a3a14';
+      ctx.lineWidth = 5;
+      ctx.beginPath();
+      ctx.ellipse(340, bodyBaseY + 30, 20, 16, 0.2, 0, Math.PI*2);
+      ctx.fill();
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.ellipse(315, bodyBaseY + 45, 14, 12, -0.1, 0, Math.PI*2);
+      ctx.fillStyle = '#a34417';
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle = '#d67a3e';
+      for (let i=0; i<3; i++) {
+        ctx.beginPath();
+        ctx.arc(305 + i*9, bodyBaseY + 54, 5, 0, Math.PI*2);
+        ctx.fill();
+      }
+      ctx.restore();
+
+      // ---------- 身体 (主躯干) 渐变 ----------
+      ctx.save();
+      ctx.shadowBlur = 22;
+      ctx.shadowColor = '#b35e1e90';
+      const bodyGrad = ctx.createRadialGradient(390, bodyBaseY-10, 20, 420, bodyBaseY, 80);
+      bodyGrad.addColorStop(0, '#d9712e');
+      bodyGrad.addColorStop(0.7, '#a34214');
+      bodyGrad.addColorStop(1, '#712d0a');
+      ctx.fillStyle = bodyGrad;
+      ctx.beginPath();
+      ctx.ellipse(410, bodyBaseY, 82, 54, 0, 0, Math.PI*2);
+      ctx.fill();
+      
+      // 肚皮亮色
+      ctx.shadowBlur = 18;
+      const bellyGrad = ctx.createLinearGradient(360, bodyBaseY-10, 460, bodyBaseY+20);
+      bellyGrad.addColorStop(0, '#f7b35c');
+      bellyGrad.addColorStop(1, '#c46a28');
+      ctx.fillStyle = bellyGrad;
+      ctx.beginPath();
+      ctx.ellipse(400, bodyBaseY+12, 50, 30, 0, 0, Math.PI*2);
+      ctx.fill();
+      ctx.restore();
+
+      // ---------- 脖子 + 头 ----------
+      ctx.save();
+      ctx.shadowBlur = 20;
+      ctx.shadowColor = '#b05a1e';
+      // 脖子 (连接身体和头)
+      ctx.beginPath();
+      ctx.moveTo(360, bodyBaseY-30);
+      ctx.quadraticCurveTo(300, bodyBaseY-90, 240, bodyBaseY-85);
+      ctx.lineWidth = 48;
+      ctx.strokeStyle = '#c45d24';
+      ctx.shadowBlur = 22;
+      ctx.stroke();
+      
+      // 头部 (主圆)
+      ctx.beginPath();
+      ctx.ellipse(220, bodyBaseY-100, 36, 38, -0.1, 0, Math.PI*2);
+      const headGrad = ctx.createRadialGradient(200, bodyBaseY-115, 10, 230, bodyBaseY-90, 45);
+      headGrad.addColorStop(0, '#e07a32');
+      headGrad.addColorStop(1, '#9e3c12');
+      ctx.fillStyle = headGrad;
+      ctx.fill();
+      ctx.strokeStyle = '#6f2d0c';
+      ctx.lineWidth = 3;
+      ctx.stroke();
+
+      // 吻部/嘴巴
+      ctx.beginPath();
+      ctx.ellipse(180, bodyBaseY-85, 20, 18, 0.1, 0, Math.PI*2);
+      ctx.fillStyle = '#c9682a';
+      ctx.fill();
+      ctx.strokeStyle = '#753b14';
+      ctx.stroke();
+      
+      // 鼻孔
+      ctx.fillStyle = '#2d1a0c';
+      ctx.shadowBlur = 6;
+      ctx.beginPath();
+      ctx.arc(168, bodyBaseY-92, 3.5, 0, Math.PI*2);
+      ctx.fill();
+      
+      // 眼睛 (带眨眼动态)
+      const eyeX = 195, eyeY = bodyBaseY-118;
+      const eyeBlink = Math.abs(Math.sin(blink * 1.8)) < 0.15 ? 0.15 : 1.0; // 眨眼效果
+      ctx.save();
+      ctx.shadowBlur = 10;
+      ctx.beginPath();
+      ctx.ellipse(eyeX, eyeY, 11, 10 * eyeBlink, 0, 0, Math.PI*2);
+      ctx.fillStyle = '#fcf9e8';
+      ctx.fill();
+      ctx.strokeStyle = '#3a1e0a';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      // 瞳孔 (会左右微小移动，更有生气)
+      const pupilShift = Math.sin(time * 0.005) * 2;
+      ctx.shadowBlur = 8;
+      ctx.beginPath();
+      ctx.arc(eyeX + 2 + pupilShift, eyeY-1, 5, 0, Math.PI*2);
+      ctx.fillStyle = '#16212e';
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(eyeX + 4 + pupilShift, eyeY-3, 2, 0, Math.PI*2);
+      ctx.fillStyle = '#f5f9ff';
+      ctx.fill();
+      ctx.restore();
+
+      // 角 (向后弯曲)
+      ctx.shadowBlur = 14;
+      ctx.fillStyle = '#5a3e2b';
+      ctx.strokeStyle = '#352415';
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.moveTo(230, bodyBaseY-135);
+      ctx.quadraticCurveTo(260, bodyBaseY-170, 290, bodyBaseY-160);
+      ctx.lineWidth = 12;
+      ctx.strokeStyle = '#6b4f38';
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(215, bodyBaseY-130);
+      ctx.quadraticCurveTo(240, bodyBaseY-165, 265, bodyBaseY-155);
+      ctx.lineWidth = 10;
+      ctx.strokeStyle = '#7d5e44';
+      ctx.stroke();
+
+      // 耳朵/鳍
+      ctx.fillStyle = '#b85f28';
+      ctx.beginPath();
+      ctx.moveTo(245, bodyBaseY-128);
+      ctx.lineTo(265, bodyBaseY-150);
+      ctx.lineTo(255, bodyBaseY-120);
+      ctx.fill();
+      ctx.restore();
+
+      // ---------- 翅膀 (动态扇动) ----------
+      // 翅膀基点 (肩部位置)
+      const wingBaseX = 350;
+      const wingBaseY = bodyBaseY - 45;
+      
+      ctx.save();
+      ctx.shadowColor = '#d96c1e';
+      ctx.shadowBlur = 28;
+      
+      // 移动到翅膀基点并旋转
+      ctx.translate(wingBaseX, wingBaseY);
+      ctx.rotate(wingAngle);  // 动态角度
+      
+      // 绘制左侧 (近处) 翅膀 —— 龙朝左，翅膀在身体上方展开
+      // 翅膀膜 (半透明)
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.quadraticCurveTo(-45, -70, -110, -55);  // 上缘
+      ctx.quadraticCurveTo(-130, -10, -80, 20);   // 后缘
+      ctx.closePath();
+      const wingGrad = ctx.createLinearGradient(-10, -20, -90, -30);
+      wingGrad.addColorStop(0, '#e07b40d0');
+      wingGrad.addColorStop(1, '#ad3e18b0');
+      ctx.fillStyle = wingGrad;
+      ctx.fill();
+      ctx.strokeStyle = '#9b4620';
+      ctx.lineWidth = 3;
+      ctx.stroke();
+      
+      // 翅膀骨架 (强化立体感)
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.lineTo(-80, -45);
+      ctx.lineWidth = 6;
+      ctx.strokeStyle = '#b55a2c';
+      ctx.stroke();
+      
+      ctx.beginPath();
+      ctx.moveTo(-35, -25);
+      ctx.lineTo(-100, -30);
+      ctx.lineWidth = 5;
+      ctx.strokeStyle = '#9f4c24';
+      ctx.stroke();
+
+      // 第二层小翼膜
+      ctx.beginPath();
+      ctx.moveTo(-20, -10);
+      ctx.quadraticCurveTo(-70, -40, -110, -30);
+      ctx.quadraticCurveTo(-90, 0, -30, 10);
+      ctx.fillStyle = '#c45a28b0';
+      ctx.fill();
+      ctx.strokeStyle = '#8b3f1a';
+      ctx.lineWidth = 2.5;
+      ctx.stroke();
+      
+      ctx.restore();
+
+      // 远处翅膀（较小、稍暗，也旋转）
+      ctx.save();
+      ctx.shadowBlur = 18;
+      ctx.translate(wingBaseX-15, wingBaseY-12);
+      ctx.rotate(wingAngle * 0.85); // 略不同步，更自然
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.quadraticCurveTo(-35, -55, -85, -45);
+      ctx.quadraticCurveTo(-100, -5, -55, 15);
+      ctx.closePath();
+      ctx.fillStyle = '#a84f1f90';
+      ctx.fill();
+      ctx.strokeStyle = '#6f3616';
+      ctx.lineWidth = 2.5;
+      ctx.stroke();
+      ctx.restore();
+
+      // 身体背棘 (装饰)
+      ctx.save();
+      ctx.shadowBlur = 10;
+      ctx.fillStyle = '#c26a2c';
+      ctx.beginPath();
+      ctx.moveTo(390, bodyBaseY-45);
+      ctx.lineTo(410, bodyBaseY-72);
+      ctx.lineTo(430, bodyBaseY-48);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.moveTo(440, bodyBaseY-42);
+      ctx.lineTo(460, bodyBaseY-68);
+      ctx.lineTo(475, bodyBaseY-40);
+      ctx.fill();
+      ctx.restore();
+
+      // 最后在龙周围加一些火星/粒子 (动态)
+      ctx.save();
+      ctx.shadowBlur = 18;
+      for (let i=0; i<6; i++) {
+        const sparkX = 180 + Math.sin(time*0.01 + i)*15 + i*10;
+        const sparkY = bodyBaseY-130 + Math.cos(time*0.02 + i)*8;
+        ctx.fillStyle = `rgba(255, 180, 70, ${0.5+0.3*Math.sin(time*0.02+i)})`;
+        ctx.beginPath();
+        ctx.arc(sparkX, sparkY, 2.5, 0, Math.PI*2);
+        ctx.fill();
+      }
+      ctx.restore();
+      
+      ctx.restore(); // 恢复最外层状态
+    }
+
+    // ----- 组合场景 (背景 + 龙 + 文字装饰)-----
+    function drawScene(wingPhase, blinkPhase, elapsed) {
+      drawBackground();
+      
+      // 翅膀角度： -0.2 到 0.7 之间摆动
+      const wingAngle = Math.sin(wingPhase) * 0.65 + 0.1;
+      
+      // 绘制龙
+      drawDragon(wingAngle, blinkPhase, elapsed);
+      
+      // 在画布上额外加一点文字光效 (不覆盖标题)
+      ctx.save();
+      ctx.shadowBlur = 20;
+      ctx.shadowColor = '#ffbb33';
+      ctx.font = 'bold 24px "Segoe UI", "Poppins", "Microsoft YaHei", sans-serif';
+      ctx.fillStyle = '#fff3d1';
+      ctx.globalAlpha = 0.5 + 0.2 * Math.sin(elapsed*0.003);
+      ctx.fillText('🐉 WYC', 700, 70);
+      ctx.restore();
+      
+      // 左下角小标识
+      ctx.save();
+      ctx.font = '14px "Segoe UI", monospace';
+      ctx.fillStyle = '#b8caf0';
+      ctx.shadowBlur = 8;
+      ctx.shadowColor = '#2f6f9f';
+      ctx.fillText('✦ 烈焰守护者 ✦', 30, H-20);
+      ctx.restore();
+    }
+
+    // ----- 启动动画 -----
+    function startAnimation() {
+      if (animationFrame) cancelAnimationFrame(animationFrame);
+      animationFrame = requestAnimationFrame(animate);
+    }
+
+    // 页面可见性变化时优化性能
+    function handleVisibilityChange() {
+      if (document.hidden) {
+        if (animationFrame) {
+          cancelAnimationFrame(animationFrame);
+          animationFrame = null;
+        }
+      } else {
+        // 恢复动画时重置时间基准避免跳帧太大
+        timeOffset = performance.now() - startTime;
+        startAnimation();
+      }
+    }
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    // 开始！
+    startAnimation();
+
+    // 窗口resize无需处理canvas大小，已固定宽高比；若需要响应式缩放通过CSS搞定
+    
+    // 清理 (理论不会执行，但良好习惯)
+    window.addEventListener('beforeunload', () => {
+      if (animationFrame) cancelAnimationFrame(animationFrame);
+    });
+
+  })();
+</script>
 </body>
 </html>
