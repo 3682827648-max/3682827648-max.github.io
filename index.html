@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover, maximum-scale=1.0">
-  <title>🏃 跑酷冒险 · 竖屏优化+金币商店</title>
+  <title>🏃 跑酷冒险 · 商店暂停</title>
   <style>
     :root { --bg: #1a1a2e; }
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -61,7 +61,6 @@
       transition: box-shadow 0.5s ease;
     }
 
-    /* 竖屏适配 */
     @media (orientation: portrait) {
       .game-wrapper { gap: 4px; padding: 4px 0; }
       .game-header { padding: 0 6px; }
@@ -98,7 +97,6 @@
     .ctrl-btn.jump-btn { background: rgba(255,180,50,0.2); border-color: rgba(255,180,50,0.5); }
     .ctrl-btn.duck-btn { background: rgba(100,180,255,0.2); border-color: rgba(100,180,255,0.5); }
 
-    /* 弹窗通用 */
     .modal {
       position: absolute; top: 0; left: 0; width: 100%; height: 100%;
       background: rgba(0,0,0,0.7); backdrop-filter: blur(8px);
@@ -172,7 +170,7 @@
         <li>⬇️ 按住蹲下躲避空中障碍</li>
         <li>🪙 收集金币用于购买技能或复活</li>
         <li>🎁 随机礼物盒：无敌/无限跳/减速</li>
-        <li>🛒 商店：随时用金币购买技能</li>
+        <li>🛒 商店：随时暂停游戏购买技能</li>
         <li>💎 死亡时5金币复活</li>
       </ul>
       <button id="startGameBtn" style="background:#ffd700; color:#1a1a2e;">开始冒险</button>
@@ -182,14 +180,14 @@
   <!-- 商店弹窗 -->
   <div class="modal" id="shopModal" style="display:none;">
     <div class="modal-content">
-      <h3>🛒 金币商店</h3>
+      <h3>🛒 金币商店 (游戏已暂停)</h3>
       <div style="display:flex; flex-direction: column; gap: 10px; margin: 16px 0;">
         <button class="buy-btn" id="buyInvincible">🛡️ 无敌 5秒 (5金币)</button>
         <button class="buy-btn" id="buyInfiniteJumps">🐇 无限跳 5秒 (5金币)</button>
         <button class="buy-btn" id="buySlowDown">🐢 减速 5秒 (5金币)</button>
         <button class="buy-btn" id="buyDoubleCoins">💰 双倍金币 15秒 (10金币)</button>
       </div>
-      <button class="close-btn" id="closeShopBtn">关闭</button>
+      <button class="close-btn" id="closeShopBtn">关闭商店</button>
     </div>
   </div>
 </div>
@@ -237,8 +235,9 @@
     ];
     const SCENE_CYCLE_TOTAL = 2800;
 
-    // 游戏状态
-    let gameState = 'intro';
+    // 游戏状态 (新增 'paused')
+    let gameState = 'intro'; // intro | waiting | playing | over | paused
+    let previousGameState = 'waiting'; // 用于从暂停恢复
     let mileage = 0;
     let speed = 250;
     let baseSpeed = 250;
@@ -281,7 +280,7 @@
       invincible: 0,
       infiniteJumps: 0,
       slowDown: 0,
-      doubleCoins: 0,   // 新增双倍金币
+      doubleCoins: 0,
     };
 
     const OBSTACLE_TYPES = {
@@ -504,7 +503,6 @@
       giftSpawnCooldown = 10 + Math.random()*8;
     }
 
-    // 购买技能
     function buySkill(skill, cost, duration) {
       if (coins < cost) return false;
       coins -= cost;
@@ -514,8 +512,10 @@
     }
 
     function update(dt) {
-      if (gameState!=='playing') {
-        updateParticles(dt); updateDustParticles(dt);
+      if (gameState !== 'playing') {
+        // 即使暂停也更新粒子和屏幕震动，保持视觉效果
+        updateParticles(dt);
+        updateDustParticles(dt);
         if (screenShake>0) screenShake=Math.max(0,screenShake-dt*60);
         return;
       }
@@ -663,7 +663,7 @@
       }
     }
 
-    // 渲染函数 (包含双倍金币UI提示)
+    // 渲染函数（含暂停遮罩）
     function render() {
       ctx.clearRect(0,0,CANVAS_WIDTH,CANVAS_HEIGHT);
       let sx=0,sy=0;
@@ -766,7 +766,7 @@
       ctx.restore();
 
       // 效果UI
-      if (gameState==='playing') {
+      if (gameState==='playing' || gameState==='paused') {
         let yOff = 20;
         if (activeEffects.invincible>0) {
           ctx.fillStyle='rgba(255,80,80,0.9)'; ctx.font='bold 13px sans-serif';
@@ -784,6 +784,17 @@
           ctx.fillStyle='rgba(255,215,0,0.9)';
           ctx.fillText(`💰 双倍金币 ${activeEffects.doubleCoins.toFixed(1)}s`, 10, yOff);
         }
+      }
+
+      // 暂停遮罩
+      if (gameState === 'paused') {
+        ctx.fillStyle = 'rgba(0,0,0,0.5)';
+        ctx.fillRect(0,0,CANVAS_WIDTH,CANVAS_HEIGHT);
+        ctx.fillStyle = '#fff';
+        ctx.font = 'bold 32px "PingFang SC","Microsoft YaHei",sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('⏸️ 游戏已暂停', CANVAS_WIDTH/2, CANVAS_HEIGHT/2);
+        ctx.textAlign = 'start';
       }
 
       if (gameState==='waiting') {
@@ -813,8 +824,9 @@
     function darkenColor(hex,a){let n=parseInt(hex.slice(1),16);let r=(n>>16)&0xff,g=(n>>8)&0xff,b=n&0xff;r=Math.floor(r*(1-a));g=Math.floor(g*(1-a));b=Math.floor(b*(1-a));return `rgb(${r},${g},${b})`;}
     function lerpColor(c1,c2,t){let p=c1.slice(1),q=c2.slice(1);let r1=parseInt(p.substr(0,2),16),g1=parseInt(p.substr(2,2),16),b1=parseInt(p.substr(4,2),16);let r2=parseInt(q.substr(0,2),16),g2=parseInt(q.substr(2,2),16),b2=parseInt(q.substr(4,2),16);let r=Math.round(lerp(r1,r2,t)),g=Math.round(lerp(g1,g2,t)),b=Math.round(lerp(b1,b2,t));return `rgb(${r},${g},${b})`;}
 
-    // 事件处理
+    // 事件处理 (忽略暂停状态输入)
     function handleKeyDown(e) {
+      if (gameState === 'paused') return;
       if (e.key===' '||e.key==='ArrowUp'||e.key==='w'||e.key==='W') {
         e.preventDefault(); inputJumpPressed=true;
         if (gameState==='waiting') startGame();
@@ -823,19 +835,66 @@
       if (e.key==='ArrowDown'||e.key==='s'||e.key==='S') { e.preventDefault(); inputDuckHeld=true; if(gameState==='waiting') startGame(); }
     }
     function handleKeyUp(e) { if (e.key==='ArrowDown'||e.key==='s'||e.key==='S') inputDuckHeld=false; }
-    function handleCanvasClick(e) { e.preventDefault(); if(gameState==='waiting'){startGame();return;} if(gameState==='over' && coins>=5){revivePlayer(); return;} inputJumpPressed=true; }
-    function handleCanvasTouch(e) { e.preventDefault(); if(gameState==='waiting'){startGame();return;} if(gameState==='over' && coins>=5){revivePlayer(); return;} inputJumpPressed=true; }
+    function handleCanvasClick(e) {
+      if (gameState === 'paused') return;
+      e.preventDefault();
+      if(gameState==='waiting'){startGame();return;}
+      if(gameState==='over' && coins>=5){revivePlayer(); return;}
+      inputJumpPressed=true;
+    }
+    function handleCanvasTouch(e) {
+      if (gameState === 'paused') return;
+      e.preventDefault();
+      if(gameState==='waiting'){startGame();return;}
+      if(gameState==='over' && coins>=5){revivePlayer(); return;}
+      inputJumpPressed=true;
+    }
 
     function setupMobileButtons() {
-      jumpBtn.addEventListener('pointerdown',(e)=>{e.preventDefault(); if(gameState==='waiting')startGame(); if(gameState==='over'&&coins>=5){revivePlayer();return;} inputJumpPressed=true;});
-      duckBtn.addEventListener('pointerdown',(e)=>{e.preventDefault(); inputDuckHeld=true; if(gameState==='waiting')startGame(); if(gameState==='over'){resetGame();startGame();}});
+      jumpBtn.addEventListener('pointerdown',(e)=>{
+        if (gameState === 'paused') return;
+        e.preventDefault();
+        if(gameState==='waiting')startGame();
+        if(gameState==='over'&&coins>=5){revivePlayer();return;}
+        inputJumpPressed=true;
+      });
+      duckBtn.addEventListener('pointerdown',(e)=>{
+        if (gameState === 'paused') return;
+        e.preventDefault();
+        inputDuckHeld=true;
+        if(gameState==='waiting')startGame();
+        if(gameState==='over'){resetGame();startGame();}
+      });
       duckBtn.addEventListener('pointerup',(e)=>{e.preventDefault(); inputDuckHeld=false;});
       duckBtn.addEventListener('pointerleave',()=>{inputDuckHeld=false;});
     }
 
-    // 商店事件
-    shopBtn.addEventListener('click', () => { shopModal.style.display = 'flex'; });
-    closeShopBtn.addEventListener('click', () => { shopModal.style.display = 'none'; });
+    // 商店暂停逻辑
+    shopBtn.addEventListener('click', () => {
+      if (gameState === 'playing') {
+        previousGameState = 'playing';
+        gameState = 'paused';
+      } else {
+        previousGameState = gameState;
+      }
+      shopModal.style.display = 'flex';
+    });
+
+    closeShopBtn.addEventListener('click', () => {
+      shopModal.style.display = 'none';
+      if (previousGameState === 'playing') {
+        gameState = 'playing';
+        lastTime = performance.now(); // 重置时间防止跳帧
+      } else {
+        gameState = previousGameState;
+      }
+    });
+
+    // 点击商店背景也可关闭
+    shopModal.addEventListener('click', (e) => {
+      if (e.target === shopModal) closeShopBtn.click();
+    });
+
     buyInvincible.addEventListener('click', () => { if(buySkill('invincible',5,5)) updateUI(); });
     buyInfiniteJumps.addEventListener('click', () => { if(buySkill('infiniteJumps',5,5)) updateUI(); });
     buySlowDown.addEventListener('click', () => { if(buySkill('slowDown',5,5)) updateUI(); });
