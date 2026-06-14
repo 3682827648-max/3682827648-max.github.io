@@ -1,387 +1,819 @@
-```html
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-  <meta charset="UTF-8">
-  <title>星环科技 - Deep Space Rings</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <style>
-    html, body {
-      height: 100%;
-      margin: 0;
-      padding: 0;
-      overflow: hidden;
-    }
-    body {
-      /* 纯黑深空背景 */
-      background: #000;
-      width: 100vw;
-      height: 100vh;
-      user-select: none;
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-    }
-    .center-wrap {
-      /* 居中包裹容器 */
-      position: absolute;
-      top: 0; left: 0; right: 0; bottom: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-direction: column;
-      z-index: 2;
-      pointer-events: none;
-    }
-    .title-neon {
-      /* 霓虹渐变发光标题 */
-      font-family: 'Segoe UI', 'Arial', 'PingFang SC', 'Microsoft YaHei', sans-serif;
-      font-size: clamp(2.2rem, 6vw, 4.5rem);
-      letter-spacing: 0.09em;
-      font-weight: 600;
-      line-height: 1.15;
-      background: linear-gradient(90deg, #66ccff 20%, #fff 40%, #ff99ff 60%, #66ff57 85%);
-      background-clip: text;
-      -webkit-background-clip: text;
-      color: transparent;
-      -webkit-text-fill-color: transparent;
-      position: relative;
-      text-align: center;
-      box-shadow: none;
-      filter: drop-shadow(0 0 8px #fff) drop-shadow(0 0 15px #6cf) drop-shadow(0 0 30px #b6f);
-      /* 呼吸霓虹动画 */
-      animation: neon-breath 3.5s ease-in-out infinite;
-      text-shadow:
-        0 0 12px #66ccff,
-        0 0 22px #fff,
-        0 0 28px #b070ff,
-        0 0 55px #0ff;
-      z-index: 3;
-      pointer-events: auto;
-      cursor: pointer;
-      user-select: text;
-    }
-    @keyframes neon-breath {
-      0% { filter: brightness(1.04) drop-shadow(0 0 12px #66ccff); }
-      50% { filter: brightness(1.52) drop-shadow(0 0 32px #ff99ff); }
-      100% { filter: brightness(1.04) drop-shadow(0 0 12px #66ccff); }
-    }
-    /* 顶部标题覆盖星环中央 */
-    .title-neon {
-      margin-bottom: 2vh;
-      margin-top: 0;
-      /* 居中定位 */
-      left: 50%; top: 7vh; transform: translate(-50%, 0);
-      width: max-content;
-      position: absolute;
-    }
-    /* 禁用滚动条 */
-    ::-webkit-scrollbar { display: none; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>🏃 跑酷冒险 · 极慢加速</title>
+    <style>
+        :root { --bg: #1a1a2e; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: var(--bg);
+            display: flex; justify-content: center; align-items: center;
+            height: 100vh; width: 100vw; overflow: hidden;
+            font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            user-select: none; -webkit-user-select: none;
+            -webkit-tap-highlight-color: transparent; touch-action: manipulation;
+        }
+        .game-wrapper { position: relative; display: flex; flex-direction: column; align-items: center; gap: 10px; }
+        .game-header {
+            display: flex; justify-content: space-between; align-items: center;
+            width: 100%; max-width: 800px; padding: 0 10px; color: #fff; pointer-events: none;
+        }
+        .scene-indicator {
+            display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 600;
+            background: rgba(0,0,0,0.4); padding: 8px 16px; border-radius: 20px; backdrop-filter: blur(10px);
+        }
+        .scene-dot { width: 10px; height: 10px; border-radius: 50%; transition: all 0.5s ease; }
+        .coin-counter {
+            display: flex; align-items: center; gap: 6px;
+            background: rgba(0,0,0,0.4); padding: 6px 14px; border-radius: 20px; backdrop-filter: blur(10px);
+        }
+        .coin-icon { font-size: 18px; }
+        .coin-value { font-weight: 700; color: #ffd700; font-size: 18px; }
+        .mileage-container {
+            display: flex; align-items: baseline; gap: 4px;
+            background: rgba(0,0,0,0.4); padding: 8px 16px; border-radius: 20px; backdrop-filter: blur(10px);
+        }
+        .mileage-value {
+            font-size: 28px; font-weight: 700; color: #ffd700; letter-spacing: 1px;
+            font-variant-numeric: tabular-nums; font-family: 'SF Mono', 'Consolas', 'Courier New', monospace;
+        }
+        .mileage-unit { font-size: 12px; color: #ccc; font-weight: 500; }
+        .speed-indicator { font-size: 11px; color: #aaa; letter-spacing: 0.5px; }
+        canvas {
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5), 0 0 0 2px rgba(255,255,255,0.05);
+            cursor: pointer; max-width: 95vw; max-height: 75vh; transition: box-shadow 0.5s ease;
+        }
+
+        .game-over-overlay {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            text-align: center; pointer-events: none; opacity: 0; transition: opacity 0.3s ease; z-index: 10;
+        }
+        .game-over-overlay.active { opacity: 1; pointer-events: all; }
+        .game-over-title { font-size: 42px; font-weight: 900; color: #fff; text-shadow: 0 4px 20px rgba(0,0,0,0.6); margin-bottom: 8px; }
+        .game-over-score { font-size: 20px; color: #ffd700; margin-bottom: 16px; }
+        .btn-group { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+        .restart-btn, .revive-btn {
+            padding: 12px 32px; font-size: 16px; font-weight: 700; color: #fff; border: none; border-radius: 30px;
+            cursor: pointer; letter-spacing: 1px; transition: all 0.3s ease; pointer-events: all;
+        }
+        .restart-btn { background: linear-gradient(135deg, #ff6b6b, #ee5a24); box-shadow: 0 8px 25px rgba(238,90,36,0.4); }
+        .revive-btn { background: linear-gradient(135deg, #4facfe, #00f2fe); box-shadow: 0 8px 25px rgba(0,242,254,0.4); display: none; }
+        .revive-btn.show { display: inline-block; }
+        .restart-btn:hover, .revive-btn:hover { transform: translateY(-3px); filter: brightness(1.1); }
+        .restart-btn:active, .revive-btn:active { transform: translateY(0); }
+
+        .mobile-controls { display: none; gap: 12px; width: 100%; max-width: 800px; padding: 0 10px; justify-content: space-between; }
+        .ctrl-btn {
+            flex: 1; padding: 14px 8px; font-size: 15px; font-weight: 700; border: 2px solid rgba(255,255,255,0.3);
+            border-radius: 14px; background: rgba(255,255,255,0.08); color: #fff; cursor: pointer; letter-spacing: 1px;
+            backdrop-filter: blur(5px); transition: all 0.15s ease; text-align: center;
+            -webkit-tap-highlight-color: transparent; touch-action: manipulation; user-select: none;
+        }
+        .ctrl-btn:active { background: rgba(255,255,255,0.25); border-color: rgba(255,255,255,0.6); transform: scale(0.95); }
+        .ctrl-btn.jump-btn { background: rgba(255,180,50,0.2); border-color: rgba(255,180,50,0.5); }
+        .ctrl-btn.duck-btn { background: rgba(100,180,255,0.2); border-color: rgba(100,180,255,0.5); }
+
+        .intro-modal {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.7); backdrop-filter: blur(8px);
+            display: flex; align-items: center; justify-content: center; z-index: 20;
+            transition: opacity 0.3s ease;
+        }
+        .intro-content {
+            background: #1e1e2f; border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 24px; padding: 30px; max-width: 420px; width: 90%;
+            color: #fff; text-align: center; box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+        }
+        .intro-content h2 { font-size: 28px; margin-bottom: 16px; }
+        .intro-content ul { text-align: left; margin: 16px 0; padding-left: 20px; line-height: 1.8; }
+        .intro-content li { margin: 8px 0; }
+        .intro-content button {
+            margin-top: 16px; padding: 14px 36px; font-size: 18px; font-weight: 700;
+            background: linear-gradient(135deg, #ffd700, #ffaa00); border: none;
+            border-radius: 30px; color: #1a1a2e; cursor: pointer; letter-spacing: 1px;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .intro-content button:hover { transform: scale(1.05); box-shadow: 0 8px 20px rgba(255,170,0,0.6); }
+
+        @media (max-width: 768px) {
+            .mobile-controls { display: flex; }
+            .game-header { font-size: 12px; }
+            .mileage-value { font-size: 22px; }
+            canvas { border-radius: 10px; max-width: 98vw; max-height: 55vh; }
+            .game-over-title { font-size: 28px; }
+        }
+    </style>
 </head>
 <body>
-  <canvas id="stars-canvas"></canvas>
-  <div class="center-wrap">
-    <div class="title-neon">星环科技<br>Deep Space Rings</div>
-  </div>
-  <script>
-    // 获取 canvas 和设置全屏
-    const canvas = document.getElementById('stars-canvas');
-    const ctx = canvas.getContext('2d');
-    // 记录画布像素密度
-    let dpr = window.devicePixelRatio || 1;
+<div class="game-wrapper">
+    <div class="game-header">
+        <div class="scene-indicator" id="sceneIndicator">
+            <span class="scene-dot" id="sceneDot"></span>
+            <span id="sceneName">平原</span>
+        </div>
+        <div class="coin-counter">
+            <span class="coin-icon">🪙</span>
+            <span class="coin-value" id="coinDisplay">0</span>
+        </div>
+        <div class="mileage-container">
+            <span class="mileage-value" id="mileageDisplay">0</span>
+            <span class="mileage-unit">米</span>
+        </div>
+        <div class="speed-indicator">
+            速度 <span id="speedDisplay">1.0x</span>
+        </div>
+    </div>
 
-    // 星环配置
-    const RING_COUNT = 6;         // 星环层数
-    const RING_PARTICLES = [120, 105, 90, 78, 65, 53]; // 每层粒子数
-    const RING_RADII =      [330, 270, 200, 150, 100, 70];    // 星环基础半径
-    const RING_THICK =      [24, 16, 12, 10, 8, 7];          // 环厚度
-    const RING_SPEED =      [0.14, -0.15, 0.11, -0.08, 0.05, -0.04]; // 旋转速度(rad/s)
-    const RING_DIR =        [1, -1, 1, -1, 1, -1];           // 正、反方向
-    const RING_BLUR =       [20, 15, 10, 8, 7, 6];           // 环辉光模糊半径
+    <canvas id="gameCanvas" width="800" height="450"></canvas>
 
-    const PARTICLE_MIN_SIZE = 1.2, PARTICLE_MAX_SIZE = 2.45;
+    <div class="game-over-overlay" id="gameOverOverlay">
+        <div class="game-over-title">🏁 游戏结束</div>
+        <div class="game-over-score" id="gameOverScore">里程: 0 米</div>
+        <div class="btn-group">
+            <button class="revive-btn" id="reviveBtn">💎 花费5金币复活</button>
+            <button class="restart-btn" id="restartBtn">🔄 重新开始</button>
+        </div>
+    </div>
 
-    let width = 0, height = 0;
+    <div class="mobile-controls" id="mobileControls">
+        <button class="ctrl-btn duck-btn" id="duckBtn">⬇ 蹲下</button>
+        <button class="ctrl-btn jump-btn" id="jumpBtn">⬆ 跳跃</button>
+    </div>
 
-    // 3D 透视参数
-    let cameraZ = 780;                       // 视点Z
-    let perspective = 850;                   // 透视距离
-    let rings = [];                          // 星环层对象数组
+    <div class="intro-modal" id="introModal">
+        <div class="intro-content">
+            <h2>🏃 跑酷冒险</h2>
+            <ul>
+                <li>⬆️ <b>跳跃</b>：躲避地面障碍</li>
+                <li>⬆️⬆️ <b>空中二段跳</b></li>
+                <li>⬇️ <b>按住蹲下</b>：躲避空中障碍</li>
+                <li>🪙 <b>金币</b>：收集可用来复活</li>
+                <li>🎁 <b>礼物盒</b>：随机获得无敌/无限跳/减速</li>
+                <li>💎 死亡时若金币≥5，可<b>花费5金币复活</b>并短暂无敌</li>
+                <li>⚡ 速度增长极慢，最高2.5倍，放心挑战</li>
+            </ul>
+            <button id="startGameBtn">开始冒险</button>
+        </div>
+    </div>
+</div>
 
-    // 交互参数
-    let rotationX = 0, rotationY = 0;        // 3D旋转角度（欧拉角制）
-    let targetRotationX = 0, targetRotationY = 0; // 鼠标交互目标角度
-    let isDragging = false;
-    let lastMouseX = 0, lastMouseY = 0;
-    let scale = 1.0, targetScale = 1.0;     // 星环整体缩放
+<script>
+    (function() {
+        // DOM元素
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const sceneNameEl = document.getElementById('sceneName');
+        const sceneDot = document.getElementById('sceneDot');
+        const mileageDisplay = document.getElementById('mileageDisplay');
+        const speedDisplay = document.getElementById('speedDisplay');
+        const coinDisplay = document.getElementById('coinDisplay');
+        const gameOverOverlay = document.getElementById('gameOverOverlay');
+        const gameOverScore = document.getElementById('gameOverScore');
+        const restartBtn = document.getElementById('restartBtn');
+        const reviveBtn = document.getElementById('reviveBtn');
+        const jumpBtn = document.getElementById('jumpBtn');
+        const duckBtn = document.getElementById('duckBtn');
+        const introModal = document.getElementById('introModal');
+        const startGameBtn = document.getElementById('startGameBtn');
 
-    // 随机微扰用
-    function rand(a, b) { return a + Math.random()*(b-a);}
-    function lerp(a,b,t){return a+(b-a)*t;}
+        // 常量
+        const CANVAS_WIDTH = 800;
+        const CANVAS_HEIGHT = 450;
+        const GROUND_Y = 340;
+        const PLAYER_X = 150;
+        const GRAVITY = 1800;
+        const JUMP_VELOCITY = -780;
+        const DOUBLE_JUMP_VELOCITY = -650;
 
-    // 适应全屏
-    function resizeCanvas() {
-      dpr = window.devicePixelRatio || 1;
-      width = window.innerWidth;
-      height = window.innerHeight;
-      canvas.width = width * dpr;
-      canvas.height = height * dpr;
-      canvas.style.width = width + "px";
-      canvas.style.height = height + "px";
-    }
+        const SCENES = [
+            { name: '🌿 平原', id: 'plain', range: [0, 700], skyTop: '#87CEEB', skyBot: '#c9e8f7', groundColor: '#5a9e3f', groundTop: '#7cb342', accentColor: '#4CAF50', dotColor: '#4CAF50' },
+            { name: '⛰️ 山地', id: 'mountain', range: [700, 1400], skyTop: '#5c7a99', skyBot: '#8fa8bf', groundColor: '#6b5b4f', groundTop: '#8a7a6d', accentColor: '#9E9E9E', dotColor: '#8D6E63' },
+            { name: '🌊 海洋', id: 'ocean', range: [1400, 2100], skyTop: '#4da6d9', skyBot: '#a3d5f0', groundColor: '#e8d5a3', groundTop: '#f0e4c8', accentColor: '#FF9800', dotColor: '#03A9F4' },
+            { name: '🌳 丘陵', id: 'hill', range: [2100, 2800], skyTop: '#e8a87c', skyBot: '#f5d5b8', groundColor: '#8b9a3f', groundTop: '#a5b84c', accentColor: '#FFC107', dotColor: '#CDDC39' },
+        ];
+        const SCENE_CYCLE_TOTAL = 2800;
 
-    window.addEventListener('resize', resizeCanvas);
-    resizeCanvas();
+        // 游戏状态
+        let gameState = 'intro';
+        let mileage = 0;
+        let speed = 250;
+        let baseSpeed = 250;
+        let score = 0;
+        let coins = 0;
+        let highScore = parseInt(localStorage.getItem('runnerHighScore') || '0');
+        let playerY = GROUND_Y;
+        let playerVelocityY = 0;
+        let isJumping = false;
+        let isDucking = false;
+        let doubleJumpUsed = false;
+        let playerHeight = 60;
+        let playerWidth = 40;
+        let playerNormalHeight = 60;
+        let playerDuckHeight = 28;
+        let playerTargetHeight = playerNormalHeight;
+        let animationFrame = 0;
+        let runCycle = 0;
+        let lastTime = performance.now();
+        let sceneTransitionAlpha = 0;
+        let currentSceneIndex = 0;
+        let particles = [];
+        let obstacles = [];
+        let coinItems = [];
+        let giftItem = null;
+        let backgroundElements = [];
+        let lastObstacleSpawn = 0;
+        let obstacleSpawnCooldown = 0;
+        let coinSpawnCooldown = 0;
+        let giftSpawnCooldown = 8 + Math.random() * 7;
+        let screenShake = 0;
+        let comboCount = 0;
+        let comboTimer = 0;
+        let dustParticles = [];
 
-    // 粒子构造
-    class Particle {
-      constructor(u, ringIdx) {
-        // u: 在圆环上的角位置，0~2π
-        this.u = u;
-        this.ringIdx = ringIdx;
-        this.baseAlpha = rand(0.38, 0.74);  // 闪烁基本透明度
-        this.alphaSpeed = rand(0.6, 1.3);
-        this.alphaPhi = rand(0, Math.PI*2);
-        this.size = rand(PARTICLE_MIN_SIZE, PARTICLE_MAX_SIZE) * (1 - ringIdx * 0.06) * dpr;
-        this.ghost = Math.random() < 0.15 ? 1 : 0; // 随机亮粒作主环点
-      }
-      // 获取该粒子闪烁的当前透明度
-      getAlpha(time) {
-        // 闪烁: 基础透明+正弦微扰
-        return this.baseAlpha + 0.32 * Math.sin(time * this.alphaSpeed + this.alphaPhi);
-      }
-      // 获取粒子亮度因子
-      getGlow(time) {
-        return this.ghost ? (1.2 + 0.7*Math.sin(time*1.1+this.alphaPhi)) : 1;
-      }
-    }
+        let inputJumpPressed = false;
+        let inputDuckHeld = false;
 
-    // 星环构造
-    class StarRing {
-      constructor(idx) {
-        this.idx = idx;
-        this.radius = RING_RADII[idx];
-        this.particleCount = RING_PARTICLES[idx];
-        this.thickness = RING_THICK[idx];
-        this.particles = [];
-        // 粒子均匀分布星环，并微扰角度，让环不死板整齐
-        for(let i=0;i<this.particleCount;i++) {
-          const u = 2*Math.PI * i/this.particleCount + rand(-0.01,0.01) + idx*0.06;
-          this.particles.push(new Particle(u, idx));
+        let activeEffects = {
+            invincible: 0,
+            infiniteJumps: 0,
+            slowDown: 0,
+        };
+
+        const OBSTACLE_TYPES = {
+            ground_small: { name: '小石头', height: 30, width: 28, needsJump: true, yOffset: 0, color: '#7d7d7d' },
+            ground_medium: { name: '大石头', height: 45, width: 35, needsJump: true, yOffset: 0, color: '#5d5d5d' },
+            ground_bush: { name: '灌木丛', height: 40, width: 40, needsJump: true, yOffset: 0, color: '#3d7a2d' },
+            ground_stump: { name: '树桩', height: 38, width: 32, needsJump: true, yOffset: 0, color: '#6b4226' },
+            ground_cactus: { name: '仙人掌', height: 50, width: 22, needsJump: true, yOffset: 0, color: '#4a8c3f' },
+            ground_rock_large: { name: '巨岩', height: 52, width: 44, needsJump: true, yOffset: 0, color: '#6e6e6e' },
+            ground_shell: { name: '贝壳', height: 28, width: 30, needsJump: true, yOffset: 0, color: '#f5deb3' },
+            air_bird: { name: '飞鸟', height: 30, width: 36, needsDuck: true, yOffset: -55, color: '#444' },
+            air_eagle: { name: '鹰', height: 28, width: 40, needsDuck: true, yOffset: -60, color: '#5c3d2e' },
+            air_seagull: { name: '海鸥', height: 26, width: 34, needsDuck: true, yOffset: -50, color: '#f0f0f0' },
+            air_bat: { name: '蝙蝠', height: 22, width: 30, needsDuck: true, yOffset: -48, color: '#3a3a3a' },
+        };
+
+        const SCENE_OBSTACLE_POOLS = {
+            plain: ['ground_small','ground_medium','ground_bush','ground_cactus','air_bird','air_bat'],
+            mountain: ['ground_medium','ground_rock_large','ground_stump','air_eagle','air_bird','ground_small'],
+            ocean: ['ground_shell','ground_small','ground_medium','air_seagull','air_bird','ground_bush'],
+            hill: ['ground_stump','ground_bush','ground_medium','ground_cactus','air_bat','air_bird','ground_small'],
+        };
+
+        const GIFT_TYPES = ['invincible', 'infiniteJumps', 'slowDown'];
+
+        function lerp(a,b,t) { return a + (b-a)*t; }
+        function clamp(v,min,max) { return Math.max(min, Math.min(max,v)); }
+        function getCurrentScene() {
+            const cycle = mileage % SCENE_CYCLE_TOTAL;
+            for (let s of SCENES) if (cycle >= s.range[0] && cycle < s.range[1]) return s;
+            return SCENES[0];
         }
-        this.rotate = rand(0, Math.PI*2); // 当前自身旋转相位
-        this.speed = RING_SPEED[idx];
-        this.dir = RING_DIR[idx];
-        this.blur = RING_BLUR[idx] * dpr;
-      }
-      update(dt) {
-        this.rotate += this.dir * this.speed * dt;
-      }
-    }
-
-    // 初始化所有星环
-    function initRings() {
-      rings = [];
-      for(let i=0;i<RING_COUNT;i++) rings.push(new StarRing(i));
-    }
-    initRings();
-
-    // 坐标旋转工具-计算世界坐标旋转后在画布上的投影
-    function rotatePoint3D([x,y,z], rx, ry) {
-      // 绕X轴旋转rx
-      let cosa = Math.cos(rx), sina = Math.sin(rx);
-      let y1 = y * cosa - z * sina;
-      let z1 = y * sina + z * cosa;
-
-      // 绕Y轴旋转ry
-      let cosb = Math.cos(ry), sinb = Math.sin(ry);
-      let x2 = x * cosb + z1 * sinb;
-      let z2 = -x * sinb + z1 * cosb;
-      return [x2, y1, z2];
-    }
-
-    // 立体透视投影
-    function project3D([x,y,z]) {
-      let zz = z + cameraZ;
-      // 使用标准透视投影
-      let px = x * perspective / zz;
-      let py = y * perspective / zz;
-      return [px, py, zz];
-    }
-
-    // 渲染动画主循环
-    let lastTime = 0;
-    function animate(timeStamp) {
-      let time = timeStamp * 0.001;
-      let dt = lastTime === 0 ? 0.016 : time - lastTime;
-      lastTime = time;
-
-      // 缓动：平滑旋转和缩放
-      let ease = 0.11;
-      rotationX = lerp(rotationX, targetRotationX, ease);
-      rotationY = lerp(rotationY, targetRotationY, ease);
-      scale = lerp(scale, targetScale, 0.18);
-
-      // 清空画布
-      ctx.clearRect(0,0,canvas.width,canvas.height);
-
-      // 计算视觉中心
-      const cx = width/2*dpr, cy = height/2*dpr;
-      ctx.save();
-      // 整体缩放（由鼠标滚轮控制）
-      ctx.translate(cx, cy);
-      ctx.scale(scale,scale);
-      ctx.translate(-cx, -cy);
-
-      // 绘制每层星环，远层先画
-      for(let ri=RING_COUNT-1;ri>=0;ri--) {
-        let ring = rings[ri];
-        ring.update(dt ? dt : 0.016);
-
-        // 层辉光效果(Group)
-        ctx.save();
-        ctx.globalAlpha = 0.9-(ri*0.10);
-        ctx.filter = `blur(${ring.blur}px)`; // 辉光模糊
-        // 对整个星环进行旋转
-        for(let pi=0;pi<ring.particleCount;pi++) {
-          let p = ring.particles[pi];
-          // 星环参数 u : 粒子在圆上的位置角度
-          let theta = p.u + ring.rotate;
-          // 星环宽度扰动波形
-          let rad = ring.radius + Math.sin(theta*2.4 + time*0.3) * ring.thickness * rand(0.15,0.36);
-
-          // 形成三维环的坐标
-          let x = Math.cos(theta) * rad;
-          let y = Math.sin(theta) * rad;
-          // 星环垂直层面，整体向上倾斜一定角度（物理层次感）
-          let z = (Math.sin(theta*1.04 + ri*0.22 + time*0.42)*0.64 + (ri-2.5)*0.41)*ring.thickness*2.1;
-
-          // 层级距离渲染
-          let [xf, yf, zf] = rotatePoint3D([x, y, z], rotationX, rotationY);
-          let [sx, sy, sz] = project3D([xf, yf, zf]);
-          let px = Math.round(sx + cx), py = Math.round(sy + cy);
-
-          // 越远变小，弱透明
-          let alphaFade = 1-Math.max(0,Math.min(1, (sz-400)/1700));
-          let particleAlpha = Math.min(1, alphaFade * (p.getAlpha(time)+0.12));
-          // 强粒子更亮
-          let glow = 1.15*p.getGlow(time);
-
-          // 粒子本身带发光晕
-          let g = ctx.createRadialGradient(px, py, 0.7*p.size, px, py, 3.2*p.size+ri*0.8);
-          g.addColorStop(0, `rgba(255,255,255,${particleAlpha*0.75*glow})`);
-          g.addColorStop(0.35, `rgba(185,255,255,${particleAlpha*0.33*glow})`);
-          g.addColorStop(1, `rgba(80,148,255,0)`);
-          ctx.beginPath();
-          ctx.arc(px, py, 2.8*p.size, 0, Math.PI*2);
-          ctx.fillStyle = g;
-          ctx.fill();
+        function getCurrentSceneIndex() {
+            const cycle = mileage % SCENE_CYCLE_TOTAL;
+            for (let i=0; i<SCENES.length; i++) if (cycle >= SCENES[i].range[0] && cycle < SCENES[i].range[1]) return i;
+            return 0;
         }
-        ctx.restore();
 
-        // 绘制主核心环点（不带blur更锐利）
-        ctx.save();
-        ctx.globalAlpha = 1.0-(ri*0.08);
-        for(let pi=0;pi<ring.particleCount;pi++) {
-          let p = ring.particles[pi];
-          if(!p.ghost) continue;
-          // 计算参数同上
-          let theta = p.u + ring.rotate;
-          let rad = ring.radius + Math.sin(theta*2.4 + time*0.3) * ring.thickness * rand(0.05,0.18);
-
-          let x = Math.cos(theta) * rad;
-          let y = Math.sin(theta) * rad;
-          let z = (Math.sin(theta*1.04 + ri*0.22 + time*0.42)*0.62 + (ri-2.5)*0.54)*ring.thickness*2.0;
-
-          let [xf, yf, zf] = rotatePoint3D([x, y, z], rotationX, rotationY);
-          let [sx, sy, sz] = project3D([xf, yf, zf]);
-          let px = Math.round(sx + cx), py = Math.round(sy + cy);
-
-          let particleAlpha = Math.max(0, Math.min(1, p.getAlpha(time) + 0.17));
-          ctx.beginPath();
-          ctx.arc(px, py, p.size, 0, Math.PI*2);
-          ctx.fillStyle = `rgba(255,255,255,${particleAlpha*0.98})`;
-          ctx.shadowColor = "#fff";
-          ctx.shadowBlur = 6 + ri*1.7;
-          ctx.fill();
+        // 极慢速度增长：每2000米才翻倍，最高2.5倍
+        function getSpeedMultiplier() {
+            let mult = 1 + (mileage / 2000);
+            if (activeEffects.slowDown > 0) mult *= 0.5;
+            return Math.min(mult, 2.5);
         }
-        ctx.restore();
-      }
-      ctx.restore();
 
-      requestAnimationFrame(animate);
-    }
+        function spawnParticles(x,y,count,color,spread,life) {
+            for (let i=0;i<count;i++) particles.push({
+                x,y, vx:(Math.random()-0.5)*spread, vy:(Math.random()-1)*spread*1.5,
+                life: life+Math.random()*life*0.5, maxLife: life*1.5, color, size:2+Math.random()*4
+            });
+        }
+        function spawnDustParticle(x,y) {
+            dustParticles.push({x,y,life:0.4+Math.random()*0.4,maxLife:0.6,size:2+Math.random()*3,alpha:0.7});
+        }
 
-    requestAnimationFrame(animate);
+        function spawnObstacle() {
+            const scene = getCurrentScene();
+            const pool = SCENE_OBSTACLE_POOLS[scene.id] || SCENE_OBSTACLE_POOLS['plain'];
+            const typeKey = pool[Math.floor(Math.random()*pool.length)];
+            const type = OBSTACLE_TYPES[typeKey];
+            // 最小间距放宽到240，更从容
+            const minGap = clamp(420 - speed*0.06, 240, 480);
+            const gapVar = Math.random()*220;
+            const ob = {
+                x: CANVAS_WIDTH+40+Math.random()*200,
+                y: type.needsDuck ? GROUND_Y+type.yOffset : GROUND_Y-type.height,
+                width: type.width, height: type.height, type: typeKey,
+                needsJump: type.needsJump||false, needsDuck: type.needsDuck||false,
+                color: type.color, passed: false, wobble:0, wobbleSpeed:0.5+Math.random()*1.5, shadowOffset:0,
+            };
+            if (obstacles.length>0) {
+                const last = obstacles[obstacles.length-1];
+                if (ob.x - last.x < minGap) ob.x = last.x + minGap + gapVar;
+            }
+            obstacles.push(ob);
+            lastObstacleSpawn = mileage;
+            obstacleSpawnCooldown = minGap/speed + Math.random()*0.7;
+        }
 
-    // ---- 交互系统：鼠标/滚轮控制 ----
-    // 1. 鼠标移动 = 目标倾斜角
-    document.addEventListener('mousemove', e => {
-      // 鼠标拖拽时优先使用拖角
-      if(isDragging) return;
-      let nx = (e.clientX/width-0.5)*2;
-      let ny = (e.clientY/height-0.5)*2;
-      // X: 绕右轴转, Y: 绕上轴转（角度限制双侧极限）
-      targetRotationY = nx * Math.PI/7;
-      targetRotationX = ny * Math.PI/8;
-    });
-    // 鼠标滚轮 = 缩放
-    document.addEventListener('wheel', e => {
-      e.preventDefault();
-      if(e.deltaY < 0) targetScale *= 1.08;
-      else targetScale *= 0.93;
-      // 缩放限值
-      if(targetScale < 0.35) targetScale = 0.35;
-      if(targetScale > 2.7) targetScale = 2.7;
-    }, {passive:false});
-    // 鼠标左键按住拖拽自旋
-    canvas.addEventListener('mousedown', e => {
-      if(e.button !== 0) return;
-      isDragging = true;
-      lastMouseX = e.clientX;
-      lastMouseY = e.clientY;
-      document.body.style.cursor = "grabbing";
-    });
-    document.addEventListener('mouseup', ()=> {
-      isDragging = false;
-      document.body.style.cursor = "";
-    });
-    // 拖拽时实时更改当前角（不缓动）
-    document.addEventListener('mousemove', e => {
-      if(!isDragging) return;
-      let dx = e.clientX - lastMouseX;
-      let dy = e.clientY - lastMouseY;
-      lastMouseX = e.clientX;
-      lastMouseY = e.clientY;
-      let scale = 0.007;
-      rotationY += dx * scale;
-      rotationX += dy * scale;
-      // 限制倾斜角度[-60°, +60°]避免过度
-      rotationX = Math.max(-Math.PI/2.5, Math.min(Math.PI/2.5, rotationX));
-      rotationY = Math.max(-Math.PI/2.4, Math.min(Math.PI/2.4, rotationY));
-      targetRotationX = rotationX;
-      targetRotationY = rotationY;
-    });
+        function spawnCoin() {
+            const y = Math.random()<0.7 ? GROUND_Y-30 : GROUND_Y-70;
+            let x = CANVAS_WIDTH+60+Math.random()*150;
+            if (coinItems.length>0) {
+                const last = coinItems[coinItems.length-1];
+                if (Math.abs(x-last.x) < 100) x = last.x + 120 + Math.random()*80;
+            }
+            coinItems.push({ x, y, size:16, collected:false, glow:0 });
+            coinSpawnCooldown = 1.0 + Math.random()*0.6;
+        }
 
-    // 双击页面重置视角和缩放
-    canvas.addEventListener('dblclick', ()=>{
-      targetRotationX = 0; targetRotationY = 0; targetScale = 1.0;
-    });
+        function spawnGift() {
+            if (giftItem) return;
+            const type = GIFT_TYPES[Math.floor(Math.random()*GIFT_TYPES.length)];
+            const y = GROUND_Y - 35 - Math.random()*80;
+            const x = CANVAS_WIDTH + 100 + Math.random()*200;
+            giftItem = { x, y, type, size:24, collected:false, bobPhase:Math.random()*Math.PI*2 };
+        }
 
-    // 浏览器窗口变化自动适应
-    window.addEventListener('resize', ()=>{
-      resizeCanvas();
-      initRings();
-    });
+        function generateBackgroundElements() {
+            backgroundElements = [];
+            const scene = getCurrentScene();
+            for (let i=0;i<18;i++) {
+                let el = { x:Math.random()*CANVAS_WIDTH, y:0, type:'cloud', size:20+Math.random()*50, speed:0.3+Math.random()*0.7, alpha:0.3+Math.random()*0.5 };
+                if (scene.id==='mountain') {
+                    el.type = Math.random()<0.5?'mountain_peak':'cloud';
+                    el.y = Math.random()<0.5?GROUND_Y-60-Math.random()*120:50+Math.random()*100;
+                    el.size = el.type==='mountain_peak'?40+Math.random()*90:15+Math.random()*40;
+                } else if (scene.id==='ocean') {
+                    el.type = Math.random()<0.35?'wave':(Math.random()<0.5?'cloud':'seagull_distant');
+                    el.y = el.type==='wave'?GROUND_Y-5-Math.random()*20:40+Math.random()*130;
+                    el.size = el.type==='wave'?30+Math.random()*60:12+Math.random()*35;
+                } else if (scene.id==='hill') {
+                    el.type = Math.random()<0.4?'hill_curve':'cloud';
+                    el.y = el.type==='hill_curve'?GROUND_Y-30-Math.random()*70:30+Math.random()*100;
+                    el.size = el.type==='hill_curve'?50+Math.random()*100:18+Math.random()*45;
+                } else {
+                    el.type = Math.random()<0.3?'tree_distant':'cloud';
+                    el.y = el.type==='tree_distant'?GROUND_Y-35-Math.random()*40:35+Math.random()*110;
+                    el.size = el.type==='tree_distant'?25+Math.random()*50:18+Math.random()*50;
+                }
+                backgroundElements.push(el);
+            }
+        }
 
-    // 防止“全屏无留白”，页面全屏覆盖处理
-    document.body.style.overflow = "hidden";
-    document.documentElement.style.overflow = "hidden";
-  </script>
+        function resetGame() {
+            mileage=0; speed=baseSpeed; score=0; coins=0;
+            playerY=GROUND_Y; playerVelocityY=0; isJumping=false; isDucking=false; doubleJumpUsed=false;
+            playerHeight=playerNormalHeight; playerTargetHeight=playerNormalHeight;
+            obstacles=[]; coinItems=[]; giftItem=null; particles=[]; dustParticles=[]; backgroundElements=[];
+            lastObstacleSpawn=0; obstacleSpawnCooldown=1.5; coinSpawnCooldown=1.0;
+            giftSpawnCooldown = 8+Math.random()*7;
+            sceneTransitionAlpha=0; currentSceneIndex=0; screenShake=0; comboCount=0; comboTimer=0;
+            activeEffects = { invincible:0, infiniteJumps:0, slowDown:0 };
+            generateBackgroundElements();
+            updateUI();
+            gameOverOverlay.classList.remove('active');
+            reviveBtn.classList.remove('show');
+        }
+
+        function startGame() {
+            if (gameState==='playing') return;
+            resetGame();
+            gameState='playing';
+            lastTime=performance.now();
+            for (let i=0;i<2;i++) { let ob=createObstacleAt(CANVAS_WIDTH+200+i*350); if(ob) obstacles.push(ob); }
+            lastObstacleSpawn=mileage; obstacleSpawnCooldown=1.2;
+        }
+
+        function createObstacleAt(x) {
+            const scene = getCurrentScene();
+            const pool = SCENE_OBSTACLE_POOLS[scene.id] || SCENE_OBSTACLE_POOLS['plain'];
+            const typeKey = pool[Math.floor(Math.random()*pool.length)];
+            const type = OBSTACLE_TYPES[typeKey];
+            return { x, y:type.needsDuck?GROUND_Y+type.yOffset:GROUND_Y-type.height, width:type.width, height:type.height, type:typeKey, needsJump:type.needsJump||false, needsDuck:type.needsDuck||false, color:type.color, passed:false, wobble:0, wobbleSpeed:0.5+Math.random()*1.5, shadowOffset:0 };
+        }
+
+        function revivePlayer() {
+            if (coins < 5) return;
+            coins -= 5;
+            obstacles = [];
+            coinItems = [];
+            giftItem = null;
+            playerY = GROUND_Y;
+            playerVelocityY = 0;
+            isJumping = false;
+            isDucking = false;
+            doubleJumpUsed = false;
+            playerHeight = playerNormalHeight;
+            playerTargetHeight = playerNormalHeight;
+            activeEffects.invincible = 3.0;
+            gameState = 'playing';
+            gameOverOverlay.classList.remove('active');
+            reviveBtn.classList.remove('show');
+            lastTime = performance.now();
+            obstacleSpawnCooldown = 1.5;
+            coinSpawnCooldown = 1.0;
+            giftSpawnCooldown = 5 + Math.random()*5;
+            updateUI();
+        }
+
+        function endGame() {
+            if (gameState!=='playing') return;
+            gameState='over';
+            screenShake=20;
+            spawnParticles(PLAYER_X+playerWidth/2, playerY+playerHeight/2, 30, '#ff6b6b', 200, 0.8);
+            if (mileage>highScore) { highScore=Math.floor(mileage); localStorage.setItem('runnerHighScore', highScore); }
+            gameOverScore.textContent = `里程: ${Math.floor(mileage)} 米 | 金币: ${coins} | 最高: ${Math.floor(highScore)} 米`;
+            if (coins >= 5) reviveBtn.classList.add('show');
+            else reviveBtn.classList.remove('show');
+            gameOverOverlay.classList.add('active');
+            updateUI();
+        }
+
+        function updateUI() {
+            mileageDisplay.textContent = Math.floor(mileage);
+            coinDisplay.textContent = coins;
+            speedDisplay.textContent = getSpeedMultiplier().toFixed(1)+'x';
+            const scene = getCurrentScene();
+            sceneNameEl.textContent = scene.name;
+            sceneDot.style.backgroundColor = scene.dotColor;
+            sceneDot.style.boxShadow = `0 0 12px ${scene.dotColor}`;
+        }
+
+        function checkCollision(r, ob) {
+            const mx=6, my=4;
+            const px=r.x+mx, py=r.y+my, pw=r.width-mx*2, ph=r.height-my*2;
+            const ox=ob.x+3, oy=ob.y+3, ow=ob.width-6, oh=ob.height-6;
+            return px<ox+ow && px+pw>ox && py<oy+oh && py+ph>oy;
+        }
+
+        function collectCoin(c) {
+            if (c.collected) return;
+            c.collected = true;
+            coins += 1;
+            score += 50;
+            spawnParticles(c.x, c.y, 10, '#ffd700', 60, 0.5);
+        }
+
+        function collectGift(g) {
+            if (g.collected) return;
+            g.collected = true;
+            giftItem = null;
+            const type = g.type;
+            if (type === 'invincible') activeEffects.invincible = 5.0;
+            else if (type === 'infiniteJumps') activeEffects.infiniteJumps = 5.0;
+            else if (type === 'slowDown') activeEffects.slowDown = 5.0;
+            spawnParticles(g.x, g.y, 20, '#ffffff', 120, 0.8);
+            giftSpawnCooldown = 10 + Math.random()*8;
+        }
+
+        function update(dt) {
+            if (gameState!=='playing') {
+                updateParticles(dt); updateDustParticles(dt);
+                if (screenShake>0) screenShake=Math.max(0,screenShake-dt*60);
+                return;
+            }
+            const cdt = Math.min(dt,0.1);
+
+            for (let key in activeEffects) {
+                if (activeEffects[key] > 0) {
+                    activeEffects[key] -= cdt;
+                    if (activeEffects[key] < 0) activeEffects[key] = 0;
+                }
+            }
+
+            speed = baseSpeed * getSpeedMultiplier();
+            speed = clamp(speed, baseSpeed, baseSpeed * 2.5);
+            mileage += speed * cdt * 0.28;
+
+            const newSceneIdx = getCurrentSceneIndex();
+            if (newSceneIdx !== currentSceneIndex) {
+                currentSceneIndex = newSceneIdx;
+                sceneTransitionAlpha = 1.0;
+                generateBackgroundElements();
+            }
+            if (sceneTransitionAlpha>0) sceneTransitionAlpha = Math.max(0, sceneTransitionAlpha-cdt*2.5);
+
+            if (!isJumping && inputDuckHeld) { playerTargetHeight=playerDuckHeight; isDucking=true; }
+            else if (!isJumping) { playerTargetHeight=playerNormalHeight; isDucking=false; }
+
+            if (inputJumpPressed) {
+                if (!isJumping) {
+                    playerVelocityY = JUMP_VELOCITY;
+                    isJumping = true; doubleJumpUsed = false; isDucking = false;
+                    playerTargetHeight = playerNormalHeight;
+                    spawnParticles(PLAYER_X+playerWidth/2, GROUND_Y, 12, '#fff', 80, 0.5);
+                } else if (!doubleJumpUsed || activeEffects.infiniteJumps > 0) {
+                    playerVelocityY = DOUBLE_JUMP_VELOCITY;
+                    doubleJumpUsed = true;
+                    spawnParticles(PLAYER_X+playerWidth/2, playerY, 15, '#aaddff', 100, 0.4);
+                }
+                inputJumpPressed = false;
+            }
+
+            if (isJumping) {
+                playerVelocityY += GRAVITY * cdt;
+                playerY += playerVelocityY * cdt;
+                if (playerY >= GROUND_Y) {
+                    playerY = GROUND_Y; playerVelocityY = 0; isJumping = false;
+                    doubleJumpUsed = false; playerTargetHeight = playerNormalHeight;
+                }
+            }
+
+            playerHeight = lerp(playerHeight, playerTargetHeight, cdt*18);
+            if (Math.abs(playerHeight-playerTargetHeight)<0.5) playerHeight=playerTargetHeight;
+
+            const playerRect = {
+                x: PLAYER_X, y: isJumping ? playerY : GROUND_Y - playerHeight,
+                width: playerWidth, height: playerHeight
+            };
+
+            for (let i=obstacles.length-1; i>=0; i--) {
+                const ob = obstacles[i];
+                ob.x -= speed * cdt;
+                ob.wobble += cdt * ob.wobbleSpeed;
+                ob.shadowOffset = Math.sin(ob.wobble)*1.5;
+                if (!ob.passed && ob.x+ob.width < PLAYER_X) {
+                    ob.passed = true; comboCount++; comboTimer=1.5; score += Math.floor(10+comboCount*2);
+                    spawnParticles(ob.x+ob.width/2, ob.y+ob.height/2, 6, '#ffd700', 50, 0.4);
+                }
+                if (checkCollision(playerRect, ob)) {
+                    if (activeEffects.invincible > 0) {
+                        spawnParticles(ob.x+ob.width/2, ob.y+ob.height/2, 20, '#ffaa00', 150, 0.6);
+                        obstacles.splice(i,1);
+                        score += 30;
+                    } else {
+                        endGame(); return;
+                    }
+                }
+                if (ob.x+ob.width < -60) obstacles.splice(i,1);
+            }
+
+            for (let i=coinItems.length-1; i>=0; i--) {
+                const c = coinItems[i];
+                c.x -= speed * cdt;
+                c.glow += cdt * 4;
+                if (!c.collected && checkCollision(playerRect, {x:c.x-c.size/2, y:c.y-c.size/2, width:c.size, height:c.size})) {
+                    collectCoin(c);
+                }
+                if (c.x < -40 || c.collected) coinItems.splice(i,1);
+            }
+
+            if (giftItem) {
+                giftItem.x -= speed * cdt;
+                giftItem.bobPhase += cdt * 3;
+                if (!giftItem.collected && checkCollision(playerRect, {x:giftItem.x-giftItem.size/2, y:giftItem.y-giftItem.size/2, width:giftItem.size, height:giftItem.size})) {
+                    collectGift(giftItem);
+                }
+                if (giftItem && (giftItem.x < -60 || giftItem.collected)) giftItem = null;
+            }
+
+            obstacleSpawnCooldown -= cdt;
+            if (obstacleSpawnCooldown<=0 && obstacles.length<8) spawnObstacle();
+            if (obstacles.length===0 && obstacleSpawnCooldown<=0) spawnObstacle();
+
+            coinSpawnCooldown -= cdt;
+            if (coinSpawnCooldown<=0 && coinItems.length<10) spawnCoin();
+
+            giftSpawnCooldown -= cdt;
+            if (giftSpawnCooldown<=0 && !giftItem) { spawnGift(); }
+
+            if (comboTimer>0) { comboTimer-=cdt; if(comboTimer<=0) comboCount=0; }
+
+            updateParticles(cdt);
+            updateDustParticles(cdt);
+
+            if (!isJumping && gameState==='playing') {
+                if (Math.random()<0.5) spawnDustParticle(PLAYER_X+playerWidth/2+(Math.random()-0.5)*20, GROUND_Y);
+            }
+
+            for (let el of backgroundElements) {
+                el.x -= speed * cdt * el.speed * 0.25;
+                if (el.x+el.size < -60) {
+                    el.x = CANVAS_WIDTH+40+Math.random()*100;
+                    el.y = el.type==='mountain_peak'?GROUND_Y-60-Math.random()*120:
+                           el.type==='wave'?GROUND_Y-5-Math.random()*20:
+                           el.type==='hill_curve'?GROUND_Y-30-Math.random()*70:
+                           el.type==='tree_distant'?GROUND_Y-35-Math.random()*40:35+Math.random()*120;
+                }
+            }
+
+            if (screenShake>0) screenShake=Math.max(0,screenShake-cdt*50);
+            animationFrame += cdt*12;
+            runCycle += speed*cdt*0.04;
+            updateUI();
+        }
+
+        function updateParticles(dt) {
+            for (let i=particles.length-1;i>=0;i--) {
+                const p=particles[i]; p.life-=dt; p.x+=p.vx*dt; p.y+=p.vy*dt; p.vy+=200*dt;
+                if (p.life<=0) particles.splice(i,1);
+            }
+        }
+        function updateDustParticles(dt) {
+            for (let i=dustParticles.length-1;i>=0;i--) {
+                const p=dustParticles[i]; p.life-=dt; p.x-=speed*dt*0.5; p.y-=20*dt;
+                if (p.life<=0) dustParticles.splice(i,1);
+            }
+        }
+
+        // 渲染函数 (保持不变)
+        function render() {
+            ctx.clearRect(0,0,CANVAS_WIDTH,CANVAS_HEIGHT);
+            let sx=0,sy=0;
+            if (screenShake>0) { sx=(Math.random()-0.5)*screenShake; sy=(Math.random()-0.5)*screenShake; }
+            ctx.save(); ctx.translate(sx,sy);
+            const scene = getCurrentScene();
+            const nextScene = SCENES[(currentSceneIndex+1)%SCENES.length];
+            let skyTop=scene.skyTop, skyBot=scene.skyBot;
+            if (sceneTransitionAlpha>0.01) {
+                skyTop=lerpColor(scene.skyTop,nextScene.skyTop,sceneTransitionAlpha);
+                skyBot=lerpColor(scene.skyBot,nextScene.skyBot,sceneTransitionAlpha);
+            }
+            const skyGrad=ctx.createLinearGradient(0,0,0,GROUND_Y);
+            skyGrad.addColorStop(0,skyTop); skyGrad.addColorStop(1,skyBot);
+            ctx.fillStyle=skyGrad; ctx.fillRect(0,0,CANVAS_WIDTH,GROUND_Y);
+
+            const sunX=CANVAS_WIDTH-120, sunY=65;
+            if (scene.id==='hill') {
+                let g=ctx.createRadialGradient(sunX,sunY,15,sunX,sunY,90);
+                g.addColorStop(0,'rgba(255,220,150,0.9)'); g.addColorStop(0.3,'rgba(255,180,100,0.5)'); g.addColorStop(1,'rgba(255,150,80,0)');
+                ctx.fillStyle=g; ctx.fillRect(sunX-100,sunY-100,200,200);
+                ctx.fillStyle='#ffe8c0'; ctx.beginPath(); ctx.arc(sunX,sunY,28,0,Math.PI*2); ctx.fill();
+            } else if (scene.id!=='mountain') {
+                let g=ctx.createRadialGradient(sunX,sunY,12,sunX,sunY,80);
+                g.addColorStop(0,'rgba(255,255,220,0.95)'); g.addColorStop(0.4,'rgba(255,240,200,0.4)'); g.addColorStop(1,'rgba(255,200,150,0)');
+                ctx.fillStyle=g; ctx.fillRect(sunX-90,sunY-90,180,180);
+                ctx.fillStyle='#fffef5'; ctx.beginPath(); ctx.arc(sunX,sunY,24,0,Math.PI*2); ctx.fill();
+            }
+
+            for (let el of backgroundElements) {
+                ctx.save(); ctx.globalAlpha=el.alpha;
+                if (el.type==='cloud') drawCloud(el.x,el.y,el.size);
+                else if (el.type==='mountain_peak') drawMountainPeak(el.x,el.y,el.size);
+                else if (el.type==='wave') drawWaveBg(el.x,el.y,el.size);
+                else if (el.type==='hill_curve') drawHillCurve(el.x,el.y,el.size);
+                else if (el.type==='tree_distant') drawDistantTree(el.x,el.y,el.size);
+                else if (el.type==='seagull_distant') drawDistantSeagull(el.x,el.y,el.size);
+                ctx.restore();
+            }
+            if (scene.id==='mountain') drawMountainRange();
+            else if (scene.id==='hill') drawHillRange();
+            else if (scene.id==='ocean') drawOceanHorizon();
+
+            let gc=scene.groundColor, gtc=scene.groundTop;
+            if (sceneTransitionAlpha>0.01) {
+                gc=lerpColor(scene.groundColor,nextScene.groundColor,sceneTransitionAlpha);
+                gtc=lerpColor(scene.groundTop,nextScene.groundTop,sceneTransitionAlpha);
+            }
+            const groundGrad=ctx.createLinearGradient(0,GROUND_Y,0,CANVAS_HEIGHT);
+            groundGrad.addColorStop(0,gtc); groundGrad.addColorStop(0.15,gc); groundGrad.addColorStop(1,darkenColor(gc,0.4));
+            ctx.fillStyle=groundGrad; ctx.fillRect(0,GROUND_Y,CANVAS_WIDTH,CANVAS_HEIGHT-GROUND_Y);
+            ctx.strokeStyle='rgba(255,255,255,0.15)'; ctx.lineWidth=2;
+            ctx.beginPath(); ctx.moveTo(0,GROUND_Y); ctx.lineTo(CANVAS_WIDTH,GROUND_Y); ctx.stroke();
+            drawGroundTexture(scene,gc);
+            if (scene.id==='ocean') drawWaterSurface();
+
+            for (let c of coinItems) {
+                const bob = Math.sin(c.glow)*3;
+                ctx.save(); ctx.translate(c.x, c.y+bob);
+                ctx.shadowColor = '#ffd700'; ctx.shadowBlur = 8;
+                ctx.fillStyle = '#FFD700'; ctx.beginPath(); ctx.arc(0,0,c.size/2,0,Math.PI*2); ctx.fill();
+                ctx.fillStyle = '#FFF8B0'; ctx.beginPath(); ctx.arc(-2,-3,c.size/6,0,Math.PI*2); ctx.fill();
+                ctx.restore();
+            }
+
+            if (giftItem) {
+                const bob = Math.sin(giftItem.bobPhase)*5;
+                ctx.save(); ctx.translate(giftItem.x, giftItem.y+bob);
+                let color = giftItem.type==='invincible'?'#ff5555':giftItem.type==='infiniteJumps'?'#55aaff':'#88cc88';
+                ctx.fillStyle = color; ctx.strokeStyle = '#fff'; ctx.lineWidth=2;
+                ctx.beginPath(); ctx.roundRect(-giftItem.size/2, -giftItem.size/2, giftItem.size, giftItem.size, 6); ctx.fill(); ctx.stroke();
+                ctx.fillStyle = '#fff'; ctx.font = 'bold 16px sans-serif'; ctx.textAlign='center';
+                ctx.fillText('🎁', 0, 6);
+                ctx.restore();
+            }
+
+            for (let ob of obstacles) {
+                ctx.fillStyle='rgba(0,0,0,0.25)';
+                ctx.beginPath(); ctx.ellipse(ob.x+ob.width/2+ob.shadowOffset+3, GROUND_Y+2, ob.width/2+2, 4+Math.abs(ob.shadowOffset), 0,0,Math.PI*2); ctx.fill();
+                drawObstacle(ob);
+            }
+
+            drawPlayer();
+
+            for (let p of particles) {
+                let alpha = clamp(p.life/p.maxLife,0,1);
+                ctx.fillStyle = p.color.startsWith('#')?p.color:p.color.replace(')',`, ${alpha})`).replace('rgb','rgba');
+                if (p.color.startsWith('#')) ctx.globalAlpha=alpha;
+                ctx.beginPath(); ctx.arc(p.x,p.y,p.size*alpha,0,Math.PI*2); ctx.fill();
+            }
+            ctx.globalAlpha=1;
+            for (let p of dustParticles) {
+                let alpha = clamp(p.life/p.maxLife,0,1)*p.alpha;
+                ctx.fillStyle=`rgba(180,160,140,${alpha})`; ctx.beginPath(); ctx.arc(p.x,p.y,p.size,0,Math.PI*2); ctx.fill();
+            }
+
+            if (sceneTransitionAlpha>0.01) {
+                ctx.fillStyle=`rgba(255,255,255,${sceneTransitionAlpha*0.3})`; ctx.fillRect(0,0,CANVAS_WIDTH,CANVAS_HEIGHT);
+            }
+            ctx.restore();
+
+            if (gameState==='playing') {
+                let yOff = 20;
+                if (activeEffects.invincible>0) {
+                    ctx.fillStyle='rgba(255,80,80,0.8)'; ctx.font='bold 14px sans-serif';
+                    ctx.fillText(`🛡️ 无敌 ${activeEffects.invincible.toFixed(1)}s`, 10, yOff); yOff+=22;
+                }
+                if (activeEffects.infiniteJumps>0) {
+                    ctx.fillStyle='rgba(80,160,255,0.8)';
+                    ctx.fillText(`🐇 无限跳 ${activeEffects.infiniteJumps.toFixed(1)}s`, 10, yOff); yOff+=22;
+                }
+                if (activeEffects.slowDown>0) {
+                    ctx.fillStyle='rgba(100,200,100,0.8)';
+                    ctx.fillText(`🐢 减速 ${activeEffects.slowDown.toFixed(1)}s`, 10, yOff);
+                }
+            }
+
+            if (gameState==='waiting') {
+                ctx.fillStyle='rgba(0,0,0,0.5)'; ctx.fillRect(0,0,CANVAS_WIDTH,CANVAS_HEIGHT);
+                ctx.fillStyle='#fff'; ctx.font='bold 28px "PingFang SC","Microsoft YaHei",sans-serif'; ctx.textAlign='center';
+                ctx.fillText('🏃 点击屏幕或按空格开始', CANVAS_WIDTH/2, CANVAS_HEIGHT/2-10);
+                if (highScore>0) { ctx.fillStyle='#ffd700'; ctx.fillText(`🏆 最高: ${Math.floor(highScore)} 米`, CANVAS_WIDTH/2, CANVAS_HEIGHT/2+45); }
+                ctx.textAlign='start';
+            }
+            if (comboCount>2 && comboTimer>0 && gameState==='playing') {
+                let alpha = Math.min(comboTimer,1);
+                ctx.fillStyle=`rgba(255,200,50,${alpha})`; ctx.font='bold 16px sans-serif'; ctx.textAlign='center';
+                ctx.fillText(`🔥 连续躲避 x${comboCount}`, PLAYER_X+playerWidth/2, GROUND_Y-playerHeight-25);
+                ctx.textAlign='start';
+            }
+        }
+
+        // 绘制函数 (保持不变)
+        function drawCloud(x,y,s){ctx.fillStyle='rgba(255,255,255,0.8)';ctx.beginPath();ctx.arc(x,y,s*0.5,0,Math.PI*2);ctx.arc(x+s*0.4,y-s*0.2,s*0.4,0,Math.PI*2);ctx.arc(x+s*0.7,y+s*0.05,s*0.35,0,Math.PI*2);ctx.arc(x-s*0.25,y+s*0.05,s*0.3,0,Math.PI*2);ctx.fill();}
+        function drawMountainPeak(x,y,s){ctx.fillStyle='rgba(140,150,165,0.7)';ctx.beginPath();ctx.moveTo(x-s*0.5,y);ctx.lineTo(x,y-s);ctx.lineTo(x+s*0.5,y);ctx.closePath();ctx.fill();ctx.fillStyle='rgba(240,240,245,0.8)';ctx.beginPath();ctx.moveTo(x-s*0.15,y-s*0.6);ctx.lineTo(x,y-s);ctx.lineTo(x+s*0.15,y-s*0.6);ctx.closePath();ctx.fill();}
+        function drawMountainRange(){ctx.fillStyle='rgba(120,130,150,0.5)';let p=[{x:50,h:130,w:180},{x:220,h:170,w:200},{x:420,h:140,w:170},{x:600,h:160,w:190},{x:750,h:120,w:160}];for(let q of p){ctx.beginPath();ctx.moveTo(q.x-q.w/2,GROUND_Y);ctx.lineTo(q.x,GROUND_Y-q.h);ctx.lineTo(q.x+q.w/2,GROUND_Y);ctx.closePath();ctx.fill();}ctx.fillStyle='rgba(230,235,240,0.6)';for(let q of p){if(q.h>140){ctx.beginPath();ctx.moveTo(q.x-20,GROUND_Y-q.h+40);ctx.lineTo(q.x,GROUND_Y-q.h);ctx.lineTo(q.x+20,GROUND_Y-q.h+40);ctx.closePath();ctx.fill();}}}
+        function drawHillRange(){ctx.fillStyle='rgba(160,175,120,0.55)';for(let i=0;i<5;i++){let hx=i*180-30,hh=60+Math.sin(i*1.3)*40,hw=140+Math.cos(i)*40;ctx.beginPath();ctx.ellipse(hx+hw/2,GROUND_Y,hw/2,hh,0,Math.PI,0);ctx.fill();}}
+        function drawOceanHorizon(){let g=ctx.createLinearGradient(0,GROUND_Y-60,0,GROUND_Y);g.addColorStop(0,'rgba(60,150,200,0.5)');g.addColorStop(1,'rgba(80,170,210,0.2)');ctx.fillStyle=g;ctx.fillRect(0,GROUND_Y-55,CANVAS_WIDTH,55);ctx.strokeStyle='rgba(255,255,255,0.3)';ctx.lineWidth=1.5;ctx.beginPath();for(let x=0;x<CANVAS_WIDTH;x+=3){let wy=GROUND_Y-50+Math.sin(x*0.03+animationFrame*0.5)*8;if(x===0)ctx.moveTo(x,wy);else ctx.lineTo(x,wy);}ctx.stroke();}
+        function drawWaveBg(x,y,s){ctx.fillStyle='rgba(150,200,220,0.4)';ctx.beginPath();ctx.arc(x,y,s*0.4,0,Math.PI*2);ctx.fill();ctx.strokeStyle='rgba(255,255,255,0.5)';ctx.lineWidth=1.5;ctx.beginPath();ctx.arc(x,y-5,s*0.5,-0.3,Math.PI+0.3);ctx.stroke();}
+        function drawHillCurve(x,y,s){ctx.fillStyle='rgba(145,170,100,0.5)';ctx.beginPath();ctx.ellipse(x,y,s*0.6,s*0.35,-0.1,Math.PI,0);ctx.fill();ctx.fillStyle='rgba(160,185,115,0.4)';ctx.beginPath();ctx.ellipse(x+10,y-8,s*0.4,s*0.25,-0.1,Math.PI,0);ctx.fill();}
+        function drawDistantTree(x,y,s){ctx.fillStyle='rgba(90,140,60,0.6)';ctx.fillRect(x-4,y-s*0.6,8,s*0.6);ctx.beginPath();ctx.arc(x,y-s*0.55,s*0.4,0,Math.PI*2);ctx.fill();ctx.fillStyle='rgba(70,120,45,0.5)';ctx.beginPath();ctx.arc(x,y-s*0.45,s*0.35,0,Math.PI*2);ctx.fill();}
+        function drawDistantSeagull(x,y,s){ctx.strokeStyle='rgba(255,255,255,0.6)';ctx.lineWidth=1.8;ctx.beginPath();ctx.moveTo(x-s*0.5,y+s*0.2);ctx.quadraticCurveTo(x-s*0.15,y-s*0.4,x,y);ctx.quadraticCurveTo(x+s*0.15,y-s*0.4,x+s*0.5,y+s*0.2);ctx.stroke();}
+        function drawWaterSurface(){ctx.strokeStyle='rgba(180,210,230,0.4)';ctx.lineWidth=1;for(let i=0;i<6;i++){let wx=(i*140+animationFrame*40)%(CANVAS_WIDTH+200)-100;ctx.beginPath();for(let dx=0;dx<80;dx+=4){let wy=GROUND_Y+6+Math.sin((dx+animationFrame*3)*0.12+i)*5;if(dx===0)ctx.moveTo(wx+dx,wy);else ctx.lineTo(wx+dx,wy);}ctx.stroke();}}
+        function drawGroundTexture(scene,gc){let seed=Math.floor(mileage/30);ctx.fillStyle='rgba(0,0,0,0.06)';for(let i=0;i<15;i++){let tx=((i*57+seed*13)%CANVAS_WIDTH),ty=GROUND_Y+8+(i*31%70);ctx.beginPath();ctx.arc(tx,ty,2+(i%3),0,Math.PI*2);ctx.fill();}if(scene.id==='plain'){ctx.strokeStyle='rgba(100,170,60,0.5)';ctx.lineWidth=1;for(let i=0;i<20;i++){let gx=((i*43+seed*7)%CANVAS_WIDTH);ctx.beginPath();ctx.moveTo(gx,GROUND_Y);ctx.lineTo(gx-3,GROUND_Y-8-(i%5));ctx.moveTo(gx,GROUND_Y);ctx.lineTo(gx+3,GROUND_Y-6-(i%4));ctx.stroke();}}else if(scene.id==='mountain'){ctx.fillStyle='rgba(0,0,0,0.08)';for(let i=0;i<12;i++){let rx=((i*67+seed*11)%CANVAS_WIDTH),ry=GROUND_Y+5+(i*23%55);ctx.beginPath();ctx.moveTo(rx,ry);ctx.lineTo(rx+6,ry-3);ctx.lineTo(rx+10,ry+2);ctx.lineTo(rx+3,ry+5);ctx.closePath();ctx.fill();}}else if(scene.id==='ocean'){ctx.fillStyle='rgba(255,255,240,0.3)';for(let i=0;i<10;i++){let sx=((i*73+seed*9)%CANVAS_WIDTH),sy=GROUND_Y+4+(i*29%50);ctx.beginPath();ctx.arc(sx,sy,3+(i%3),0,Math.PI);ctx.fill();}}}
+        function drawObstacle(ob){ctx.save();if(ob.needsJump){let t=ob.type;if(t.includes('rock')||t==='ground_small'||t==='ground_medium'){let g=ctx.createLinearGradient(ob.x,ob.y,ob.x,ob.y+ob.height);g.addColorStop(0,'#c0c0c0');g.addColorStop(0.5,ob.color);g.addColorStop(1,darkenColor(ob.color,0.3));ctx.fillStyle=g;ctx.beginPath();ctx.moveTo(ob.x+2,ob.y+ob.height);ctx.quadraticCurveTo(ob.x-2,ob.y+ob.height*0.4,ob.x+ob.width*0.25,ob.y+3);ctx.quadraticCurveTo(ob.x+ob.width*0.5,ob.y-4,ob.x+ob.width*0.75,ob.y+2);ctx.quadraticCurveTo(ob.x+ob.width+2,ob.y+ob.height*0.35,ob.x+ob.width-2,ob.y+ob.height);ctx.closePath();ctx.fill();ctx.fillStyle='rgba(255,255,255,0.2)';ctx.beginPath();ctx.arc(ob.x+ob.width*0.35,ob.y+ob.height*0.3,ob.width*0.25,0,Math.PI*2);ctx.fill();}else if(t.includes('bush')){ctx.fillStyle=ob.color;ctx.beginPath();ctx.arc(ob.x+ob.width*0.3,ob.y+ob.height*0.5,ob.width*0.4,0,Math.PI*2);ctx.arc(ob.x+ob.width*0.7,ob.y+ob.height*0.5,ob.width*0.35,0,Math.PI*2);ctx.arc(ob.x+ob.width*0.5,ob.y+ob.height*0.25,ob.width*0.38,0,Math.PI*2);ctx.fill();ctx.fillStyle='rgba(255,255,255,0.15)';ctx.beginPath();ctx.arc(ob.x+ob.width*0.45,ob.y+ob.height*0.3,ob.width*0.15,0,Math.PI*2);ctx.fill();}else if(t.includes('stump')){ctx.fillStyle=ob.color;ctx.fillRect(ob.x+3,ob.y+2,ob.width-6,ob.height-2);ctx.fillStyle='#8b5e3c';ctx.fillRect(ob.x,ob.y,ob.width,10);ctx.fillStyle='rgba(255,255,255,0.15)';ctx.fillRect(ob.x+4,ob.y+14,ob.width-8,4);ctx.strokeStyle='rgba(0,0,0,0.2)';ctx.lineWidth=1;ctx.beginPath();ctx.arc(ob.x+ob.width/2,ob.y+5,ob.width*0.25,0,Math.PI*2);ctx.stroke();}else if(t.includes('cactus')){ctx.fillStyle=ob.color;ctx.fillRect(ob.x+ob.width*0.35,ob.y,ob.width*0.3,ob.height);ctx.fillRect(ob.x+1,ob.y+ob.height*0.2,ob.width*0.35,ob.height*0.5);ctx.fillRect(ob.x+ob.width*0.6,ob.y+ob.height*0.15,ob.width*0.35,ob.height*0.45);ctx.fillStyle='rgba(255,255,255,0.2)';ctx.fillRect(ob.x+ob.width*0.38,ob.y+2,ob.width*0.2,ob.height*0.5);}else if(t.includes('shell')){ctx.fillStyle=ob.color;ctx.beginPath();ctx.ellipse(ob.x+ob.width/2,ob.y+ob.height*0.55,ob.width*0.45,ob.height*0.4,0,Math.PI,0);ctx.fill();ctx.strokeStyle='rgba(180,150,120,0.6)';ctx.lineWidth=1.5;ctx.stroke();ctx.fillStyle='rgba(255,255,255,0.3)';ctx.beginPath();ctx.arc(ob.x+ob.width*0.4,ob.y+ob.height*0.3,ob.width*0.2,0,Math.PI*2);ctx.fill();}else{ctx.fillStyle=ob.color;ctx.fillRect(ob.x,ob.y,ob.width,ob.height);}}else if(ob.needsDuck){let wf=Math.sin(ob.wobble*3)*8;ctx.fillStyle=ob.color;ctx.beginPath();ctx.ellipse(ob.x+ob.width/2,ob.y+ob.height/2,ob.width*0.35,ob.height*0.4,0,0,Math.PI*2);ctx.fill();ctx.fillStyle=darkenColor(ob.color,0.2);ctx.beginPath();ctx.moveTo(ob.x+ob.width*0.4,ob.y+ob.height*0.45);ctx.quadraticCurveTo(ob.x+ob.width*0.1,ob.y-5+wf,ob.x+ob.width*0.2,ob.y+ob.height*0.3+wf*0.5);ctx.quadraticCurveTo(ob.x+ob.width*0.4,ob.y+ob.height*0.2,ob.x+ob.width*0.5,ob.y+ob.height*0.4);ctx.fill();ctx.beginPath();ctx.moveTo(ob.x+ob.width*0.6,ob.y+ob.height*0.45);ctx.quadraticCurveTo(ob.x+ob.width*0.9,ob.y-5-wf,ob.x+ob.width*0.8,ob.y+ob.height*0.3-wf*0.5);ctx.quadraticCurveTo(ob.x+ob.width*0.6,ob.y+ob.height*0.2,ob.x+ob.width*0.5,ob.y+ob.height*0.4);ctx.fill();ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(ob.x+ob.width*0.65,ob.y+ob.height*0.38,3,0,Math.PI*2);ctx.fill();ctx.fillStyle='#000';ctx.beginPath();ctx.arc(ob.x+ob.width*0.67,ob.y+ob.height*0.38,1.5,0,Math.PI*2);ctx.fill();}ctx.restore();}
+        function drawPlayer(){ctx.save();let px=PLAYER_X,py=isJumping?playerY:GROUND_Y-playerHeight,ph=playerHeight,pw=playerWidth;if(!isJumping||(isJumping&&playerY>GROUND_Y-80)){let sa=isJumping?clamp(1-(GROUND_Y-playerY)/150,0.15,0.4):0.35;ctx.fillStyle=`rgba(0,0,0,${sa})`;let sy=GROUND_Y+2,ss=isJumping?clamp(1-(GROUND_Y-playerY)/200,0.5,1):1;ctx.beginPath();ctx.ellipse(px+pw/2,sy,pw*0.45*ss,4*ss,0,0,Math.PI*2);ctx.fill();}let bg=ctx.createLinearGradient(px,py,px,py+ph);bg.addColorStop(0,'#ff8c42');bg.addColorStop(0.5,'#f06530');bg.addColorStop(1,'#c94420');ctx.fillStyle=bg;ctx.beginPath();ctx.roundRect(px+4,py+ph*0.35,pw-8,ph*0.6,10);ctx.fill();let hg=ctx.createRadialGradient(px+pw/2,py+ph*0.25,ph*0.08,px+pw/2,py+ph*0.22,ph*0.32);hg.addColorStop(0,'#ffb380');hg.addColorStop(1,'#f06530');ctx.fillStyle=hg;ctx.beginPath();ctx.arc(px+pw/2,py+ph*0.22,ph*0.3,0,Math.PI*2);ctx.fill();let eyeY=py+ph*0.18;ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(px+pw*0.62,eyeY,ph*0.13,0,Math.PI*2);ctx.fill();ctx.fillStyle='#1a1a1a';ctx.beginPath();ctx.arc(px+pw*0.65,eyeY,ph*0.06,0,Math.PI*2);ctx.fill();ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(px+pw*0.67,eyeY-ph*0.02,ph*0.025,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#5a2010';ctx.lineWidth=1.5;ctx.beginPath();ctx.arc(px+pw*0.55,py+ph*0.28,ph*0.08,0.2,Math.PI-0.2);ctx.stroke();let ls=isJumping?0.3:Math.sin(runCycle)*0.5,lb=py+ph*0.85;ctx.fillStyle='#c94420';ctx.save();ctx.translate(px+pw*0.3,lb);ctx.rotate(ls);ctx.fillRect(-5,0,10,ph*0.25);ctx.fillStyle='#8b2a10';ctx.fillRect(-6,ph*0.22,12,5);ctx.restore();ctx.save();ctx.translate(px+pw*0.7,lb);ctx.rotate(-ls);ctx.fillRect(-5,0,10,ph*0.25);ctx.fillStyle='#8b2a10';ctx.fillRect(-6,ph*0.22,12,5);ctx.restore();let as=isJumping?-0.6:Math.sin(runCycle+Math.PI)*0.4;ctx.fillStyle='#f06530';ctx.save();ctx.translate(px+pw*0.2,py+ph*0.45);ctx.rotate(as);ctx.fillRect(-3,0,7,ph*0.28);ctx.restore();ctx.save();ctx.translate(px+pw*0.8,py+ph*0.45);ctx.rotate(-as);ctx.fillRect(-3,0,7,ph*0.28);ctx.restore();ctx.fillStyle='#f06530';ctx.beginPath();let tw=Math.sin(runCycle*1.5)*0.2;ctx.moveTo(px+2,py+ph*0.55);ctx.quadraticCurveTo(px-12,py+ph*0.4+tw*15,px-6,py+ph*0.6+tw*10);ctx.quadraticCurveTo(px,py+ph*0.65,px+3,py+ph*0.6);ctx.fill();ctx.fillStyle='#ffd700';ctx.fillRect(px+pw*0.1,py+ph*0.05,pw*0.8,5);ctx.fillStyle='#ffd700';ctx.beginPath();ctx.moveTo(px+pw*0.8,py+ph*0.03);ctx.lineTo(px+pw+6,py-ph*0.05);ctx.lineTo(px+pw+2,py+ph*0.1);ctx.fill();ctx.restore();}
+
+        function darkenColor(hex,a){let n=parseInt(hex.slice(1),16);let r=(n>>16)&0xff,g=(n>>8)&0xff,b=n&0xff;r=Math.floor(r*(1-a));g=Math.floor(g*(1-a));b=Math.floor(b*(1-a));return `rgb(${r},${g},${b})`;}
+        function lerpColor(c1,c2,t){let p=c1.slice(1),q=c2.slice(1);let r1=parseInt(p.substr(0,2),16),g1=parseInt(p.substr(2,2),16),b1=parseInt(p.substr(4,2),16);let r2=parseInt(q.substr(0,2),16),g2=parseInt(q.substr(2,2),16),b2=parseInt(q.substr(4,2),16);let r=Math.round(lerp(r1,r2,t)),g=Math.round(lerp(g1,g2,t)),b=Math.round(lerp(b1,b2,t));return `rgb(${r},${g},${b})`;}
+
+        function handleKeyDown(e) {
+            if (e.key===' '||e.key==='ArrowUp'||e.key==='w'||e.key==='W') {
+                e.preventDefault(); inputJumpPressed=true;
+                if (gameState==='waiting') startGame();
+                if (gameState==='over' && coins>=5) { revivePlayer(); }
+            }
+            if (e.key==='ArrowDown'||e.key==='s'||e.key==='S') { e.preventDefault(); inputDuckHeld=true; if(gameState==='waiting') startGame(); }
+        }
+        function handleKeyUp(e) { if (e.key==='ArrowDown'||e.key==='s'||e.key==='S') inputDuckHeld=false; }
+        function handleCanvasClick(e) { e.preventDefault(); if(gameState==='waiting'){startGame();return;} if(gameState==='over' && coins>=5){revivePlayer(); return;} inputJumpPressed=true; }
+        function handleCanvasTouch(e) { e.preventDefault(); if(gameState==='waiting'){startGame();return;} if(gameState==='over' && coins>=5){revivePlayer(); return;} inputJumpPressed=true; }
+
+        function setupMobileButtons() {
+            jumpBtn.addEventListener('pointerdown',(e)=>{e.preventDefault(); if(gameState==='waiting')startGame(); if(gameState==='over'&&coins>=5){revivePlayer();return;} inputJumpPressed=true;});
+            duckBtn.addEventListener('pointerdown',(e)=>{e.preventDefault(); inputDuckHeld=true; if(gameState==='waiting')startGame(); if(gameState==='over'){resetGame();startGame();}});
+            duckBtn.addEventListener('pointerup',(e)=>{e.preventDefault(); inputDuckHeld=false;});
+            duckBtn.addEventListener('pointerleave',()=>{inputDuckHeld=false;});
+        }
+
+        reviveBtn.addEventListener('click', (e) => { e.stopPropagation(); if (coins >= 5) revivePlayer(); });
+        restartBtn.addEventListener('click', (e) => { e.stopPropagation(); resetGame(); startGame(); });
+        startGameBtn.addEventListener('click', () => { introModal.style.display = 'none'; gameState = 'waiting'; resetGame(); });
+
+        function init() {
+            canvas.width=CANVAS_WIDTH; canvas.height=CANVAS_HEIGHT;
+            resetGame(); generateBackgroundElements(); updateUI();
+            window.addEventListener('keydown',handleKeyDown); window.addEventListener('keyup',handleKeyUp);
+            canvas.addEventListener('click',handleCanvasClick); canvas.addEventListener('touchstart',handleCanvasTouch,{passive:false});
+            setupMobileButtons();
+            if('ontouchstart' in window||navigator.maxTouchPoints>0) document.getElementById('mobileControls').style.display='flex';
+            function resizeCanvas(){let mw=Math.min(window.innerWidth*0.95,800),mh=Math.min(window.innerHeight*0.7,500);let s=Math.min(mw/CANVAS_WIDTH,mh/CANVAS_HEIGHT);canvas.style.width=CANVAS_WIDTH*s+'px';canvas.style.height=CANVAS_HEIGHT*s+'px';}
+            window.addEventListener('resize',resizeCanvas); resizeCanvas();
+            lastTime=performance.now(); gameLoop();
+        }
+        function gameLoop(timestamp) {
+            if(!timestamp) timestamp=performance.now();
+            let dt=(timestamp-lastTime)/1000; if(dt<=0) dt=0.016; if(dt>0.15) dt=0.15;
+            lastTime=timestamp; update(dt); render(); inputJumpPressed=false;
+            requestAnimationFrame(gameLoop);
+        }
+        init();
+    })();
+</script>
 </body>
 </html>
-```
-
+  
