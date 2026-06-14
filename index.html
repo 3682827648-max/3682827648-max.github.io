@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover, maximum-scale=1.0">
-  <title>🏃 跑酷冒险 · 技能显示与精美UI</title>
+  <title>🏃 跑酷冒险 · 流畅过渡</title>
   <style>
     :root { --bg: #1a1a2e; }
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -215,7 +215,8 @@
     let playerHeight = 60, playerWidth = 40, playerNormalHeight = 60, playerDuckHeight = 28;
     let playerTargetHeight = playerNormalHeight;
     let animationFrame = 0, runCycle = 0, lastTime = performance.now();
-    let sceneTransitionAlpha = 0, currentSceneIndex = 0;
+    let sceneTransitionAlpha = 0; // 场景过渡 alpha
+    let currentSceneIndex = 0;
     let particles = [], obstacles = [], coinItems = [], giftItem = null, backgroundElements = [];
     let obstacleSpawnCooldown = 0, coinSpawnCooldown = 0, giftSpawnCooldown = 8;
     let screenShake = 0, comboCount = 0, comboTimer = 0, dustParticles = [];
@@ -317,7 +318,6 @@
     function collectGift(g){ if(g.collected) return; g.collected=true; giftItem=null; if(g.type==='invincible') activeEffects.invincible=5; else if(g.type==='infiniteJumps') activeEffects.infiniteJumps=5; else if(g.type==='slowDown') activeEffects.slowDown=5; spawnParticles(g.x,g.y,20,'#fff',120,0.8); giftSpawnCooldown=10+Math.random()*8; }
     function buySkill(skill,cost,duration){ if(coins<cost) return false; coins-=cost; activeEffects[skill]=duration; updateUI(); return true; }
 
-    // 绘制函数
     function drawKitty(c, x, y, scale=1){
       c.save(); c.translate(x,y); c.scale(scale,scale);
       c.fillStyle='#fff'; c.fillRect(12,30,16,25); c.fillStyle='#ff99cc'; c.fillRect(14,50,6,10); c.fillRect(20,50,6,10);
@@ -376,26 +376,23 @@
     function drawObstacle(ob){
       ctx.save();
       if(ob.needsJump){
-        if(ob.type.includes('rock') || ob.type === 'ground_small' || ob.type === 'ground_medium' || ob.type === 'ground_rock_large'){
+        if(ob.type.includes('rock')){
           ctx.fillStyle=ob.color; ctx.beginPath();
           ctx.moveTo(ob.x+4,ob.y+ob.height); ctx.quadraticCurveTo(ob.x-2,ob.y+ob.height*0.4,ob.x+ob.width*0.3,ob.y+4);
           ctx.quadraticCurveTo(ob.x+ob.width*0.5,ob.y-2,ob.x+ob.width*0.7,ob.y+3);
           ctx.quadraticCurveTo(ob.x+ob.width+2,ob.y+ob.height*0.3,ob.x+ob.width-4,ob.y+ob.height); ctx.fill();
-          ctx.fillStyle='rgba(255,255,255,0.2)'; ctx.beginPath(); ctx.arc(ob.x+ob.width*0.35,ob.y+ob.height*0.3,ob.width*0.2,0,Math.PI*2); ctx.fill();
         } else if(ob.type.includes('bush')){
           ctx.fillStyle=ob.color;
           for(let i=0;i<3;i++){ ctx.beginPath(); ctx.arc(ob.x+ob.width*(0.2+i*0.3), ob.y+ob.height*0.6, ob.width*0.35, 0, Math.PI*2); ctx.fill(); }
         } else if(ob.type.includes('stump')){
           ctx.fillStyle='#8b5e3c'; ctx.fillRect(ob.x,ob.y,ob.width,10);
           ctx.fillStyle=ob.color; ctx.fillRect(ob.x+3,ob.y+2,ob.width-6,ob.height-2);
-          ctx.fillStyle='rgba(0,0,0,0.2)'; ctx.beginPath(); ctx.arc(ob.x+ob.width/2,ob.y+5,ob.width*0.2,0,Math.PI*2); ctx.fill();
         } else if(ob.type.includes('cactus')){
           ctx.fillStyle=ob.color; ctx.fillRect(ob.x+ob.width*0.35,ob.y,ob.width*0.3,ob.height);
           ctx.fillRect(ob.x+4,ob.y+ob.height*0.2,ob.width*0.3,ob.height*0.4);
           ctx.fillRect(ob.x+ob.width*0.6,ob.y+ob.height*0.15,ob.width*0.3,ob.height*0.4);
         } else if(ob.type.includes('shell')){
           ctx.fillStyle=ob.color; ctx.beginPath(); ctx.ellipse(ob.x+ob.width/2,ob.y+ob.height*0.6,ob.width*0.45,ob.height*0.4,0,Math.PI,0); ctx.fill();
-          ctx.strokeStyle='rgba(180,150,120,0.8)'; ctx.lineWidth=1.5; ctx.stroke();
         } else {
           ctx.fillStyle=ob.color; ctx.fillRect(ob.x,ob.y,ob.width,ob.height);
         }
@@ -409,12 +406,12 @@
         ctx.beginPath(); ctx.moveTo(ob.x+ob.width*0.6,ob.y+ob.height*0.45);
         ctx.quadraticCurveTo(ob.x+ob.width*0.9,ob.y-5-wf,ob.x+ob.width*0.8,ob.y+ob.height*0.3-wf*0.5);
         ctx.quadraticCurveTo(ob.x+ob.width*0.6,ob.y+ob.height*0.2,ob.x+ob.width*0.5,ob.y+ob.height*0.4); ctx.fill();
-        ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(ob.x+ob.width*0.65,ob.y+ob.height*0.38,2.5,0,Math.PI*2); ctx.fill();
       }
       ctx.restore();
     }
 
     function darkenColor(hex,a){ let n=parseInt(hex.slice(1),16); let r=(n>>16)&0xff,g=(n>>8)&0xff,b=n&0xff; return `rgb(${Math.floor(r*(1-a))},${Math.floor(g*(1-a))},${Math.floor(b*(1-a))})`; }
+    function lerpColor(c1,c2,t){ let p=c1.slice(1),q=c2.slice(1); let r1=parseInt(p.substr(0,2),16),g1=parseInt(p.substr(2,2),16),b1=parseInt(p.substr(4,2),16); let r2=parseInt(q.substr(0,2),16),g2=parseInt(q.substr(2,2),16),b2=parseInt(q.substr(4,2),16); return `rgb(${Math.round(lerp(r1,r2,t))},${Math.round(lerp(g1,g2,t))},${Math.round(lerp(b1,b2,t))})`; }
 
     function drawCloud(x,y,s){ ctx.fillStyle='rgba(255,255,255,0.8)'; ctx.beginPath(); ctx.arc(x,y,s*0.4,0,Math.PI*2); ctx.arc(x+s*0.3,y-s*0.2,s*0.3,0,Math.PI*2); ctx.arc(x+s*0.6,y,s*0.35,0,Math.PI*2); ctx.fill(); }
     function drawMountainPeak(x,y,s){ ctx.fillStyle='rgba(140,150,165,0.7)'; ctx.beginPath(); ctx.moveTo(x-s*0.5,y); ctx.lineTo(x,y-s); ctx.lineTo(x+s*0.5,y); ctx.fill(); }
@@ -428,8 +425,16 @@
       for(let k in activeEffects){ if(activeEffects[k]>0){ activeEffects[k]-=cdt; if(activeEffects[k]<0) activeEffects[k]=0; } }
       speed=baseSpeed*getSpeedMultiplier(); speed=clamp(speed,baseSpeed,baseSpeed*2.5);
       mileage+=speed*cdt*0.28;
-      if(getCurrentSceneIndex()!==currentSceneIndex){ currentSceneIndex=getCurrentSceneIndex(); sceneTransitionAlpha=1; generateBackgroundElements(); }
-      if(sceneTransitionAlpha>0) sceneTransitionAlpha=Math.max(0,sceneTransitionAlpha-cdt*2.5);
+
+      // 场景过渡
+      const newSceneIdx = getCurrentSceneIndex();
+      if (newSceneIdx !== currentSceneIndex) {
+        currentSceneIndex = newSceneIdx;
+        sceneTransitionAlpha = 1.0;
+        generateBackgroundElements();
+      }
+      if (sceneTransitionAlpha > 0) sceneTransitionAlpha = Math.max(0, sceneTransitionAlpha - cdt * 2.5);
+
       if(!isJumping&&inputDuckHeld){ playerTargetHeight=playerDuckHeight; isDucking=true; } else if(!isJumping){ playerTargetHeight=playerNormalHeight; isDucking=false; }
       if(inputJumpPressed){
         if(!isJumping){ playerVelocityY=JUMP_VELOCITY; isJumping=true; doubleJumpUsed=false; isDucking=false; playerTargetHeight=playerNormalHeight; }
@@ -467,35 +472,66 @@
       ctx.clearRect(0,0,CANVAS_WIDTH,CANVAS_HEIGHT);
       let sx=0,sy=0; if(screenShake>0){ sx=(Math.random()-0.5)*screenShake; sy=(Math.random()-0.5)*screenShake; }
       ctx.save(); ctx.translate(sx,sy);
-      const scene=getCurrentScene(); const skyGrad=ctx.createLinearGradient(0,0,0,GROUND_Y); skyGrad.addColorStop(0,scene.skyTop); skyGrad.addColorStop(1,scene.skyBot); ctx.fillStyle=skyGrad; ctx.fillRect(0,0,CANVAS_WIDTH,GROUND_Y);
-      ctx.fillStyle='#fff9e6'; ctx.beginPath(); ctx.arc(CANVAS_WIDTH-120,65,30,0,Math.PI*2); ctx.fill();
-      for(let el of backgroundElements){ ctx.save(); ctx.globalAlpha=el.alpha; if(el.type==='cloud') drawCloud(el.x,el.y,el.size); else if(el.type==='mountain_peak') drawMountainPeak(el.x,el.y,el.size); else if(el.type==='wave') drawWaveBg(el.x,el.y,el.size); else if(el.type==='hill_curve') drawHillCurve(el.x,el.y,el.size); else drawDistantTree(el.x,el.y,el.size); ctx.restore(); }
-      const grad=ctx.createLinearGradient(0,GROUND_Y,0,CANVAS_HEIGHT); grad.addColorStop(0,scene.groundTop); grad.addColorStop(0.3,scene.groundColor); grad.addColorStop(1,darkenColor(scene.groundColor,0.5)); ctx.fillStyle=grad; ctx.fillRect(0,GROUND_Y,CANVAS_WIDTH,CANVAS_HEIGHT-GROUND_Y);
-      for(let c of coinItems){ ctx.save(); ctx.translate(c.x,c.y+Math.sin(c.glow)*3); ctx.fillStyle='#FFD700'; ctx.beginPath(); ctx.arc(0,0,c.size/2,0,Math.PI*2); ctx.fill(); ctx.restore(); }
-      if(giftItem){ 
-        ctx.save(); ctx.translate(giftItem.x,giftItem.y+Math.sin(giftItem.bobPhase)*5);
-        // 绘制精美礼盒
-        let boxColor = giftItem.type==='invincible'?'#ff5555':giftItem.type==='infiniteJumps'?'#55aaff':'#88cc88';
-        ctx.fillStyle = boxColor; ctx.fillRect(-12, -12, 24, 24);
-        ctx.fillStyle = '#fff'; ctx.fillRect(-2, -12, 4, 24); ctx.fillRect(-12, -2, 24, 4);
-        ctx.fillStyle = darkenColor(boxColor, 0.3); ctx.beginPath(); ctx.arc(0, -2, 6, 0, Math.PI*2); ctx.fill();
-        ctx.restore(); 
+
+      const scene = getCurrentScene();
+      const nextScene = SCENES[(currentSceneIndex + 1) % SCENES.length];
+
+      // 天空过渡
+      let skyTop = scene.skyTop, skyBot = scene.skyBot;
+      if (sceneTransitionAlpha > 0.01) {
+        skyTop = lerpColor(scene.skyTop, nextScene.skyTop, sceneTransitionAlpha);
+        skyBot = lerpColor(scene.skyBot, nextScene.skyBot, sceneTransitionAlpha);
       }
+      const skyGrad = ctx.createLinearGradient(0,0,0,GROUND_Y);
+      skyGrad.addColorStop(0, skyTop); skyGrad.addColorStop(1, skyBot);
+      ctx.fillStyle = skyGrad; ctx.fillRect(0,0,CANVAS_WIDTH,GROUND_Y);
+
+      ctx.fillStyle='#fff9e6'; ctx.beginPath(); ctx.arc(CANVAS_WIDTH-120,65,30,0,Math.PI*2); ctx.fill();
+
+      // 背景元素
+      for (let el of backgroundElements) {
+        ctx.save(); ctx.globalAlpha = el.alpha;
+        if (el.type==='cloud') drawCloud(el.x,el.y,el.size);
+        else if (el.type==='mountain_peak') drawMountainPeak(el.x,el.y,el.size);
+        else if (el.type==='wave') drawWaveBg(el.x,el.y,el.size);
+        else if (el.type==='hill_curve') drawHillCurve(el.x,el.y,el.size);
+        else if (el.type==='tree_distant') drawDistantTree(el.x,el.y,el.size);
+        else if (el.type==='seagull_distant') { ctx.strokeStyle='rgba(255,255,255,0.6)'; ctx.lineWidth=1.5; ctx.beginPath(); ctx.moveTo(el.x-10,el.y+5); ctx.quadraticCurveTo(el.x,el.y-5,el.x+10,el.y+5); ctx.stroke(); }
+        ctx.restore();
+      }
+
+      // 地面过渡
+      let groundColor = scene.groundColor, groundTopColor = scene.groundTop;
+      if (sceneTransitionAlpha > 0.01) {
+        groundColor = lerpColor(scene.groundColor, nextScene.groundColor, sceneTransitionAlpha);
+        groundTopColor = lerpColor(scene.groundTop, nextScene.groundTop, sceneTransitionAlpha);
+      }
+      const groundGrad = ctx.createLinearGradient(0,GROUND_Y,0,CANVAS_HEIGHT);
+      groundGrad.addColorStop(0, groundTopColor); groundGrad.addColorStop(0.3, groundColor); groundGrad.addColorStop(1, darkenColor(groundColor,0.5));
+      ctx.fillStyle = groundGrad; ctx.fillRect(0,GROUND_Y,CANVAS_WIDTH,CANVAS_HEIGHT-GROUND_Y);
+
+      // 金币、礼物、障碍物、角色等（保持不变）
+      for(let c of coinItems){ ctx.save(); ctx.translate(c.x,c.y+Math.sin(c.glow)*3); ctx.fillStyle='#FFD700'; ctx.beginPath(); ctx.arc(0,0,c.size/2,0,Math.PI*2); ctx.fill(); ctx.restore(); }
+      if(giftItem){ ctx.save(); ctx.translate(giftItem.x,giftItem.y+Math.sin(giftItem.bobPhase)*5); let bc=giftItem.type==='invincible'?'#ff5555':giftItem.type==='infiniteJumps'?'#55aaff':'#88cc88'; ctx.fillStyle=bc; ctx.fillRect(-12,-12,24,24); ctx.fillStyle='#fff'; ctx.fillRect(-2,-12,4,24); ctx.fillRect(-12,-2,24,4); ctx.fillStyle=darkenColor(bc,0.3); ctx.beginPath(); ctx.arc(0,-2,6,0,Math.PI*2); ctx.fill(); ctx.restore(); }
       for(let ob of obstacles){ ctx.fillStyle='rgba(0,0,0,0.2)'; ctx.beginPath(); ctx.ellipse(ob.x+ob.width/2,GROUND_Y+2,ob.width/2,4,0,0,Math.PI*2); ctx.fill(); drawObstacle(ob); }
       if(currentSkin==='iron'&&!isJumping){ ctx.save(); ctx.translate(PLAYER_X+playerWidth/2,GROUND_Y); ctx.rotate(ironHaloAngle); ctx.beginPath(); ctx.arc(0,0,28,0,Math.PI*2); ctx.strokeStyle='#ffaa00'; ctx.lineWidth=3; ctx.stroke(); ctx.restore(); }
       drawPlayer();
       for(let p of particles){ ctx.globalAlpha=p.life/p.maxLife; ctx.fillStyle=p.color; ctx.beginPath(); ctx.arc(p.x,p.y,p.size,0,Math.PI*2); ctx.fill(); } ctx.globalAlpha=1;
       for(let p of dustParticles){ ctx.globalAlpha=p.life/p.maxLife*0.5; ctx.fillStyle='#aaa'; ctx.beginPath(); ctx.arc(p.x,p.y,p.size,0,Math.PI*2); ctx.fill(); } ctx.globalAlpha=1;
+
+      // 场景过渡白色遮罩
+      if (sceneTransitionAlpha > 0.01) {
+        ctx.fillStyle = `rgba(255,255,255,${sceneTransitionAlpha * 0.3})`;
+        ctx.fillRect(0,0,CANVAS_WIDTH,CANVAS_HEIGHT);
+      }
       ctx.restore();
 
-      // 绘制技能计时器 (左上角)
-      if (gameState === 'playing' || gameState === 'paused') {
+      // 技能计时器
+      if (gameState==='playing' || gameState==='paused') {
         let yOff = 20;
         const drawEffect = (text, time, color) => {
-          ctx.fillStyle = color;
-          ctx.font = 'bold 14px "PingFang SC", "Microsoft YaHei", sans-serif';
-          ctx.fillText(`${text} ${time.toFixed(1)}s`, 15, yOff);
-          yOff += 24;
+          ctx.fillStyle = color; ctx.font = 'bold 14px "PingFang SC", "Microsoft YaHei", sans-serif';
+          ctx.fillText(`${text} ${time.toFixed(1)}s`, 15, yOff); yOff += 24;
         };
         if (activeEffects.invincible > 0) drawEffect('🛡️ 无敌', activeEffects.invincible, 'rgba(255,80,80,0.95)');
         if (activeEffects.infiniteJumps > 0) drawEffect('🐇 无限跳', activeEffects.infiniteJumps, 'rgba(80,160,255,0.95)');
