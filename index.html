@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>手机横屏 FPS 射击游戏</title>
+<title>手机 FPS 射击游戏</title>
 <style>
 * {
     margin: 0;
@@ -67,10 +67,12 @@ html, body {
     align-items: center;
     margin: 13px 0;
     font-size: 15px;
+    gap: 10px;
 }
 
 .switch {
     width: 54px;
+    min-width: 54px;
     height: 28px;
     border-radius: 20px;
     background: #555;
@@ -125,6 +127,7 @@ select {
     font-size: 14px;
     line-height: 1.5;
     text-shadow: 0 0 4px #000;
+    pointer-events: none;
 }
 
 #settingsBtn {
@@ -183,17 +186,45 @@ select {
     background: rgba(255,0,0,0.95);
 }
 
-#landscapeTip {
-    position: fixed;
-    inset: 0;
-    z-index: 50;
-    display: none;
-    background: #000;
-    color: white;
-    align-items: center;
-    justify-content: center;
-    font-size: 22px;
-    text-align: center;
+@media (max-width: 700px) and (orientation: portrait) {
+    #joyBase {
+        width: 110px;
+        height: 110px;
+        left: 22px;
+        bottom: 22px;
+    }
+
+    #joyStick {
+        width: 46px;
+        height: 46px;
+        left: 32px;
+        top: 32px;
+    }
+
+    #shootBtn {
+        width: 78px;
+        height: 78px;
+        right: 24px;
+        bottom: 26px;
+        font-size: 16px;
+    }
+
+    #hud {
+        font-size: 12px;
+    }
+
+    .panel {
+        width: 94vw;
+        padding: 18px;
+    }
+
+    .panel h1 {
+        font-size: 21px;
+    }
+
+    .option {
+        font-size: 13px;
+    }
 }
 </style>
 </head>
@@ -247,8 +278,6 @@ select {
     </div>
 </div>
 
-<div id="landscapeTip">请横屏游玩</div>
-
 <script>
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
@@ -264,7 +293,6 @@ const hpText = document.getElementById("hpText");
 const hitText = document.getElementById("hitText");
 const modeText = document.getElementById("modeText");
 const lockPartSelect = document.getElementById("lockPart");
-const landscapeTip = document.getElementById("landscapeTip");
 
 let W = 0;
 let H = 0;
@@ -298,24 +326,6 @@ settingsBtn.onclick = () => {
     menu.style.display = "flex";
 };
 
-function resize() {
-    W = window.innerWidth;
-    H = window.innerHeight;
-
-    canvas.width = W * devicePixelRatio;
-    canvas.height = H * devicePixelRatio;
-    canvas.style.width = W + "px";
-    canvas.style.height = H + "px";
-    ctx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
-
-    crosshair.x = W / 2;
-    crosshair.y = H / 2;
-
-    landscapeTip.style.display = H > W ? "flex" : "none";
-}
-
-window.addEventListener("resize", resize);
-
 const crosshair = {
     x: 0,
     y: 0
@@ -328,18 +338,16 @@ const joystick = {
     dy: 0
 };
 
-// 固定不动的掩体，屏幕坐标
+// 固定掩体，基于 1100x620 的设计坐标，会按屏幕缩放
 const covers = [
     { x: 250, y: 260, w: 170, h: 155 },
     { x: 520, y: 245, w: 210, h: 170 },
     { x: 820, y: 275, w: 180, h: 145 }
 ];
 
-// 敌人会移动
 const enemy = {
     x: 540,
     y: 220,
-    scale: 1,
     targetX: 540,
     targetY: 220,
     hp: 100,
@@ -355,9 +363,42 @@ let texts = [];
 let muzzleFlash = 0;
 let shootCooldown = 0;
 
+function resize() {
+    W = window.innerWidth;
+    H = window.innerHeight;
+
+    canvas.width = W * devicePixelRatio;
+    canvas.height = H * devicePixelRatio;
+    canvas.style.width = W + "px";
+    canvas.style.height = H + "px";
+
+    ctx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
+
+    crosshair.x = W / 2;
+    crosshair.y = H / 2;
+
+    if (!enemy.alive || enemy.x === 540) {
+        resetEnemy();
+    }
+}
+
+window.addEventListener("resize", resize);
+
+function getScaledCover(c) {
+    const sx = W / 1100;
+    const sy = H / 620;
+
+    return {
+        x: c.x * sx,
+        y: c.y * sy,
+        w: c.w * sx,
+        h: c.h * sy
+    };
+}
+
 function resetEnemy() {
     enemy.x = W * (0.35 + Math.random() * 0.3);
-    enemy.y = H * 0.36;
+    enemy.y = H * (0.28 + Math.random() * 0.08);
     enemy.targetX = enemy.x;
     enemy.targetY = enemy.y;
     enemy.hp = 100;
@@ -373,30 +414,24 @@ function chooseEnemyTarget() {
     const useCover = Math.random() < 0.65;
 
     if (useCover) {
-        const c = covers[Math.floor(Math.random() * covers.length)];
-        enemy.targetX = c.x + c.w / 2 + (Math.random() - 0.5) * c.w * 0.6;
-        enemy.targetY = c.y - 50 + Math.random() * 35;
-    } else {
-        enemy.targetX = W * (0.25 + Math.random() * 0.5);
-        enemy.targetY = H * (0.28 + Math.random() * 0.12);
-    }
-}
+        const raw = covers[Math.floor(Math.random() * covers.length)];
+        const c = getScaledCover(raw);
 
-function getScaledCover(c) {
-    const sx = W / 1100;
-    const sy = H / 620;
-    return {
-        x: c.x * sx,
-        y: c.y * sy,
-        w: c.w * sx,
-        h: c.h * sy
-    };
+        enemy.targetX = c.x + c.w / 2 + (Math.random() - 0.5) * c.w * 0.7;
+        enemy.targetY = c.y - H * 0.08 + Math.random() * H * 0.055;
+    } else {
+        enemy.targetX = W * (0.2 + Math.random() * 0.6);
+        enemy.targetY = H * (0.25 + Math.random() * 0.16);
+    }
+
+    enemy.targetX = Math.max(W * 0.12, Math.min(W * 0.88, enemy.targetX));
+    enemy.targetY = Math.max(H * 0.16, Math.min(H * 0.55, enemy.targetY));
 }
 
 function getEnemyParts() {
-    const bodyH = H * 0.30;
-    const bodyW = bodyH * 0.32;
-    const headR = bodyH * 0.11;
+    const bodyH = Math.min(W, H) * 0.32;
+    const bodyW = bodyH * 0.34;
+    const headR = bodyH * 0.115;
 
     const footY = enemy.y + bodyH;
     const headX = enemy.x;
@@ -417,8 +452,8 @@ function getEnemyParts() {
         chest: {
             x: chestX,
             y: chestY,
-            w: bodyW * 0.55,
-            h: bodyH * 0.20
+            w: bodyW * 0.58,
+            h: bodyH * 0.22
         },
         body: {
             x: enemy.x - bodyW / 2,
@@ -432,6 +467,7 @@ function getEnemyParts() {
 function pointInCover(px, py) {
     for (const raw of covers) {
         const c = getScaledCover(raw);
+
         if (
             px >= c.x &&
             px <= c.x + c.w &&
@@ -441,15 +477,18 @@ function pointInCover(px, py) {
             return true;
         }
     }
+
     return false;
 }
 
 function updateEnemy(dt) {
     if (!enemy.alive) {
         enemy.respawnTimer += dt;
+
         if (enemy.respawnTimer > 1.4) {
             resetEnemy();
         }
+
         return;
     }
 
@@ -465,7 +504,7 @@ function updateEnemy(dt) {
     const dist = Math.hypot(dx, dy);
 
     if (dist > 2) {
-        const speed = 110;
+        const speed = Math.min(W, H) * 0.22;
         enemy.x += dx / dist * speed * dt;
         enemy.y += dy / dist * speed * dt;
     }
@@ -479,8 +518,7 @@ function updateAimbot(dt) {
 
     const dx = target.x - crosshair.x;
     const dy = target.y - crosshair.y;
-
-    const range = Math.min(W, H) * 0.45;
+    const range = Math.min(W, H) * 0.48;
 
     if (Math.hypot(dx, dy) < range) {
         crosshair.x += dx * dt * 5.5;
@@ -493,8 +531,8 @@ function update(dt) {
 
     updateEnemy(dt);
 
-    // 关键修改：摇杆只控制准星，不控制场景和掩体
-    const aimSpeed = 520;
+    // 摇杆只控制准星，不控制场景和掩体
+    const aimSpeed = Math.min(W, H) * 0.95;
     crosshair.x += joystick.dx * aimSpeed * dt;
     crosshair.y += joystick.dy * aimSpeed * dt;
 
@@ -513,10 +551,16 @@ function update(dt) {
         t.y -= dt * 38;
         t.life -= dt;
     });
+
     texts = texts.filter(t => t.life > 0);
 
+    updateHud();
+}
+
+function updateHud() {
     hpText.textContent = "敌人生命：" + Math.max(0, Math.round(enemy.hp));
     hitText.textContent = "头部命中：" + enemy.headHits + " / 3　身体命中：" + enemy.bodyHits + " / 7";
+
     modeText.textContent =
         "ESP：" + (opts.esp ? "开" : "关") +
         "　自动瞄准：" + (opts.aimbot ? "开" : "关") +
@@ -539,7 +583,7 @@ function fire() {
 
     if (enemy.alive) {
         if (opts.homing) {
-            // 追踪弹：直接拐弯命中当前锁定位置，可打掩体后露头
+            // 子弹追踪：自动拐弯命中当前锁定部位
             if (opts.lockPart === "head") {
                 tx = ep.head.x;
                 ty = ep.head.y;
@@ -549,6 +593,7 @@ function fire() {
                 ty = ep.chest.y;
                 part = "body";
             }
+
             hit = true;
         } else {
             const cx = crosshair.x;
@@ -630,13 +675,16 @@ shootBtn.addEventListener("pointerdown", e => {
 
 joyBase.addEventListener("pointerdown", e => {
     const rect = joyBase.getBoundingClientRect();
+
     joystick.active = true;
     joystick.id = e.pointerId;
+
     updateJoystick(e.clientX, e.clientY, rect);
 });
 
 window.addEventListener("pointermove", e => {
     if (!joystick.active || e.pointerId !== joystick.id) return;
+
     const rect = joyBase.getBoundingClientRect();
     updateJoystick(e.clientX, e.clientY, rect);
 });
@@ -647,10 +695,28 @@ window.addEventListener("pointerup", e => {
         joystick.id = null;
         joystick.dx = 0;
         joystick.dy = 0;
-        joyStick.style.left = "39px";
-        joyStick.style.top = "39px";
+        resetJoystickVisual();
     }
 });
+
+window.addEventListener("pointercancel", e => {
+    if (e.pointerId === joystick.id) {
+        joystick.active = false;
+        joystick.id = null;
+        joystick.dx = 0;
+        joystick.dy = 0;
+        resetJoystickVisual();
+    }
+});
+
+function resetJoystickVisual() {
+    const size = joyBase.clientWidth;
+    const stick = joyStick.clientWidth;
+    const pos = (size - stick) / 2;
+
+    joyStick.style.left = pos + "px";
+    joyStick.style.top = pos + "px";
+}
 
 function updateJoystick(clientX, clientY, rect) {
     const cx = rect.left + rect.width / 2;
@@ -659,7 +725,8 @@ function updateJoystick(clientX, clientY, rect) {
     let dx = clientX - cx;
     let dy = clientY - cy;
 
-    const max = rect.width / 2 - 26;
+    const stickSize = joyStick.clientWidth;
+    const max = rect.width / 2 - stickSize / 2;
     const len = Math.hypot(dx, dy);
 
     if (len > max) {
@@ -670,26 +737,32 @@ function updateJoystick(clientX, clientY, rect) {
     joystick.dx = dx / max;
     joystick.dy = dy / max;
 
-    joyStick.style.left = 39 + dx + "px";
-    joyStick.style.top = 39 + dy + "px";
+    const baseSize = joyBase.clientWidth;
+    const center = (baseSize - stickSize) / 2;
+
+    joyStick.style.left = center + dx + "px";
+    joyStick.style.top = center + dy + "px";
 }
 
 function drawBackground() {
     const sky = ctx.createLinearGradient(0, 0, 0, H * 0.55);
     sky.addColorStop(0, "#22537e");
     sky.addColorStop(1, "#9bc8e8");
+
     ctx.fillStyle = sky;
     ctx.fillRect(0, 0, W, H * 0.55);
 
     const ground = ctx.createLinearGradient(0, H * 0.55, 0, H);
     ground.addColorStop(0, "#3f4b3e");
     ground.addColorStop(1, "#171b16");
+
     ctx.fillStyle = ground;
     ctx.fillRect(0, H * 0.55, W, H * 0.45);
 
     ctx.strokeStyle = "rgba(255,255,255,0.08)";
     for (let i = 0; i < 14; i++) {
         const y = H * 0.56 + i * H * 0.035;
+
         ctx.beginPath();
         ctx.moveTo(0, y);
         ctx.lineTo(W, y);
@@ -701,9 +774,6 @@ function drawEnemy() {
     if (!enemy.alive) return;
 
     const ep = getEnemyParts();
-
-    const headCovered = pointInCover(ep.head.x, ep.head.y);
-    const chestCovered = pointInCover(ep.chest.x, ep.chest.y);
 
     ctx.save();
 
@@ -750,7 +820,7 @@ function drawCovers() {
         ctx.strokeRect(c.x, c.y, c.w, c.h);
 
         ctx.fillStyle = "rgba(255,255,255,0.08)";
-        ctx.fillRect(c.x, c.y, c.w, 8);
+        ctx.fillRect(c.x, c.y, c.w, Math.max(5, H * 0.012));
     });
 }
 
@@ -763,6 +833,7 @@ function drawESP() {
     const covered = headCovered || chestCovered;
 
     ctx.save();
+
     ctx.shadowBlur = 18;
     ctx.shadowColor = covered ? "#00eaff" : "#ff4040";
     ctx.strokeStyle = covered ? "#00eaff" : "#ff4040";
@@ -814,6 +885,7 @@ function drawCrosshair() {
 function drawBullets() {
     bullets.forEach(b => {
         ctx.save();
+
         ctx.globalAlpha = Math.max(0, b.life / 0.09);
         ctx.strokeStyle = b.homing ? "#00fff2" : "#fff06a";
         ctx.lineWidth = b.homing ? 4 : 3;
@@ -822,7 +894,8 @@ function drawBullets() {
 
         if (b.homing) {
             const mx = (b.x1 + b.x2) / 2;
-            const my = Math.min(b.y1, b.y2) - 80;
+            const my = Math.min(b.y1, b.y2) - Math.min(W, H) * 0.14;
+
             ctx.moveTo(b.x1, b.y1);
             ctx.quadraticCurveTo(mx, my, b.x2, b.y2);
         } else {
@@ -836,17 +909,20 @@ function drawBullets() {
 
     if (muzzleFlash > 0) {
         ctx.save();
+
         ctx.globalAlpha = muzzleFlash;
         ctx.fillStyle = "rgba(255,230,80,0.65)";
         ctx.beginPath();
-        ctx.arc(W * 0.72, H * 0.78, 30, 0, Math.PI * 2);
+        ctx.arc(W * 0.72, H * 0.78, Math.min(W, H) * 0.055, 0, Math.PI * 2);
         ctx.fill();
+
         ctx.restore();
     }
 }
 
 function drawWeapon() {
     ctx.save();
+
     ctx.translate(W * 0.62, H * 0.76);
 
     ctx.fillStyle = "#222";
@@ -870,12 +946,14 @@ function drawTexts() {
 
     texts.forEach(t => {
         ctx.save();
+
         ctx.globalAlpha = Math.max(0, t.life);
         ctx.strokeStyle = "black";
         ctx.lineWidth = 4;
         ctx.fillStyle = t.color;
         ctx.strokeText(t.text, t.x, t.y);
         ctx.fillText(t.text, t.x, t.y);
+
         ctx.restore();
     });
 }
@@ -885,11 +963,11 @@ function render() {
 
     drawBackground();
 
-    // 先画敌人，再画掩体，这样掩体能真正挡住敌人
+    // 先画敌人，再画掩体，掩体可以挡住敌人
     drawEnemy();
     drawCovers();
 
-    // ESP 在掩体之后画，所以可以隔掩体观察
+    // ESP 最后画，可以隔掩体显示敌人
     drawESP();
 
     drawBullets();
@@ -916,6 +994,7 @@ function loop(now) {
 }
 
 resize();
+resetJoystickVisual();
 resetEnemy();
 requestAnimationFrame(loop);
 </script>
